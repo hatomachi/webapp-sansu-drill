@@ -32,4 +32,11 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    port: 3350,
+    host: true,
+  },
+  build: {
+    outDir: 'dist',
+  },
 });
