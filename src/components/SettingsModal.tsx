@@ -114,14 +114,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">ブランチ</label>
-            <input
-              type="text"
-              value={settings.githubBranch}
-              onChange={(e) => setSettings({ ...settings, githubBranch: e.target.value })}
-              className="w-full text-xs p-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">ブランチ</label>
+              <input
+                type="text"
+                value={settings.githubBranch}
+                onChange={(e) => setSettings({ ...settings, githubBranch: e.target.value })}
+                className="w-full text-xs p-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">保存先パス (Vault内)</label>
+              <input
+                type="text"
+                value={settings.dataPathPrefix || '30_Kids/SansuDrill'}
+                onChange={(e) => setSettings({ ...settings, dataPathPrefix: e.target.value })}
+                placeholder="30_Kids/SansuDrill"
+                className="w-full text-xs p-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           {/* デモデータリセット */}

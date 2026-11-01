@@ -92,8 +92,9 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
 export const DEFAULT_SETTINGS: UserSettings = {
   githubToken: '',
   githubOwner: 'hatomachi',
-  githubRepo: 'webapp-sansu-drill',
+  githubRepo: 'family-vault',
   githubBranch: 'main',
+  dataPathPrefix: '30_Kids/SansuDrill',
   isDemoMode: true,
 };
 
@@ -143,7 +144,8 @@ export class StorageService {
     }
 
     try {
-      const url = `https://api.github.com/repos/${settings.githubOwner}/${settings.githubRepo}/contents/data/questions.json?ref=${settings.githubBranch}`;
+      const questionsPath = `${settings.dataPathPrefix || '30_Kids/SansuDrill'}/questions.json`;
+      const url = `https://api.github.com/repos/${settings.githubOwner}/${settings.githubRepo}/contents/${questionsPath}?ref=${settings.githubBranch}`;
       const res = await fetch(url, {
         headers: {
           Authorization: `token ${settings.githubToken}`,
@@ -185,7 +187,8 @@ export class StorageService {
     }
 
     try {
-      const url = `https://api.github.com/repos/${settings.githubOwner}/${settings.githubRepo}/contents/data/questions.json`;
+      const questionsPath = `${settings.dataPathPrefix || '30_Kids/SansuDrill'}/questions.json`;
+      const url = `https://api.github.com/repos/${settings.githubOwner}/${settings.githubRepo}/contents/${questionsPath}`;
       
       // 既存ファイルの SHA を取得
       let sha: string | undefined;
@@ -242,7 +245,8 @@ export class StorageService {
     const settings = this.getSettings();
     const now = new Date();
     const id = `q_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${Date.now().toString().slice(-4)}`;
-    const filePath = `data/raw/${fileName}`;
+    const prefix = settings.dataPathPrefix || '30_Kids/SansuDrill';
+    const filePath = `${prefix}/raw/${fileName}`;
 
     const newQuestion: QuestionItem = {
       id,

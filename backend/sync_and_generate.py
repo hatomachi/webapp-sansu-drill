@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Sansu Drill - Mac常駐 agy 監視＆類題生成スクリプト
-voice-reflection-agent と同じアーキテクチャを採用:
-1. Outbound (git pull) で定期的に新着画像や親ツッコミを検知
+Sansu Drill - Mac常駐 agy 監視＆類題生成スクリプト (family-vault 連携版)
+1. Outbound (git pull) で family-vault/30_Kids/SansuDrill の新着画像や親ツッコミを検知
 2. Mac上の agy CLI (/Users/s-ikari/.local/bin/agy) を非対話実行 (-p)
-3. 画像解析 ＆ 小2算数プロンプトで類題・解答・親向け指導ヒントをJSON生成
-4. data/questions.json を更新し、git commit & push
+3. 画像解析 ＆ family-vault内の子どもプロフィール情報 ＆ 小2算数プロンプトで類題・解答・指導ヒントをJSON生成
+4. 30_Kids/SansuDrill/questions.json を更新し、family-vault へ git commit & push
 """
 
 import os
@@ -24,12 +23,15 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
-logger = logging.getLogger("sansu_drill.agy_crawler")
+logger = logging.getLogger("sansu_drill.family_vault_crawler")
 
 # パス定義
-REPO_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = REPO_DIR / "data"
+FAMILY_VAULT_DIR = Path(os.environ.get("FAMILY_VAULT_PATH", "/Users/s-ikari/work/family-vault"))
+DATA_DIR = FAMILY_VAULT_DIR / "30_Kids" / "SansuDrill"
 QUESTIONS_FILE = DATA_DIR / "questions.json"
+RAW_DIR = DATA_DIR / "raw"
+CHILD_PROFILE_FILE = FAMILY_VAULT_DIR / "30_Kids" / "プロフィール_子ども.md"
+
 AGY_BIN = Path(os.environ.get("AGY_BIN_PATH", "/Users/s-ikari/.local/bin/agy"))
 
 ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
@@ -49,7 +51,7 @@ def clean_json_output(raw_output: str) -> str:
         cleaned = "\n".join(lines).strip()
     return cleaned
 
-def run_cmd(cmd: str, cwd: Path = REPO_DIR) -> str:
+def run_cmd(cmd: str, cwd: Path = FAMILY_VAULT_DIR) -> str:
     res = subprocess.run(
         cmd,
         cwd=cwd,
@@ -62,19 +64,30 @@ def run_cmd(cmd: str, cwd: Path = REPO_DIR) -> str:
     return res.stdout.strip()
 
 def git_pull():
-    logger.info("Executing git pull --rebase origin main...")
+    logger.info(f"Executing git pull in {FAMILY_VAULT_DIR}...")
     try:
-        run_cmd("git pull --rebase origin main")
+        run_cmd("git pull --rebase origin main", cwd=FAMILY_VAULT_DIR)
     except subprocess.CalledProcessError as e:
         logger.warning(f"git pull warning/error: {e.stderr.strip()}")
 
 def git_commit_and_push(question_id: str, monster_name: str):
-    logger.info(f"Committing and pushing updates for {question_id}...")
-    run_cmd("git add data/questions.json")
-    commit_msg = f"feat(ai): generated similar problem for {question_id} ({monster_name}) via agy"
-    run_cmd(f'git commit -m "{commit_msg}"')
-    run_cmd("git push origin main")
-    logger.info("Successfully pushed updates to origin main.")
+    logger.info(f"Committing and pushing updates to family-vault for {question_id}...")
+    rel_path = "30_Kids/SansuDrill/questions.json"
+    run_cmd(f"git add {rel_path}", cwd=FAMILY_VAULT_DIR)
+    commit_msg = f"feat(kids): update SansuDrill problem {question_id} ({monster_name}) via agy"
+    run_cmd(f'git commit -m "{commit_msg}"', cwd=FAMILY_VAULT_DIR)
+    run_cmd("git push origin main", cwd=FAMILY_VAULT_DIR)
+    logger.info("Successfully pushed updates to family-vault.")
+
+def load_child_context() -> str:
+    if CHILD_PROFILE_FILE.exists():
+        try:
+            content = CHILD_PROFILE_FILE.read_text(encoding="utf-8")
+            # 冒頭部分をコンテキストとして抽出
+            return f"\n【参考：娘（小2）のプロフィール・興味関心】\n{content[:1000]}\n"
+        except Exception:
+            pass
+    return ""
 
 def build_agy_prompt(item: dict, image_abs_path: Path) -> str:
     feedback_history = item.get("feedback_history", [])
@@ -87,6 +100,8 @@ def build_agy_prompt(item: dict, image_abs_path: Path) -> str:
 ※ 親の意図（線分図を描かせる、引き算・逆算にする、言葉遣い、難易度など）を100%最優先して問題を再構成してください。
 """
 
+    child_context = load_child_context()
+
     prompt = f"""
 あなたは小学校2年生向けの算数学習専門のベテラン教師AIです。
 親がドリルやテストで間違えた算数の文章題をカメラで撮影しました。
@@ -94,6 +109,7 @@ def build_agy_prompt(item: dict, image_abs_path: Path) -> str:
 画像ファイルパス: {image_abs_path}
 （read_file ツール等で上記の画像を確認し、問題の単元・出題意図・子どもがつまずいた構造を正確に読み取ってください）
 
+{child_context}
 {feedback_section}
 
 娘（小2）が紙のノートと鉛筆で解くための【最高の類題（1問）】と【親向けの丸つけ・指導ヒント】を生成してください。
@@ -104,7 +120,7 @@ def build_agy_prompt(item: dict, image_abs_path: Path) -> str:
    - 小2が情景を思い浮かべられる自然な日本語・ストーリーにしてください。
 2. 綺麗な数字と適切な難易度:
    - 小2の手書き・筆算で解ける綺麗な自然数にしてください（答えが分数、小数、マイナス、不自然に巨大になるのは厳禁）。
-   - 登場人物やアイテム（どんぐり、折り紙、クッキー、シール、水そう等）を楽しくアレンジしてください。
+   - 登場人物やアイテム（どんぐり、折り紙、クッキー、シール、水そう、娘が好きな生き物等）を楽しくアレンジしてください。
 3. 親向け指導ヒント:
    - 親が赤ペンで丸つけする際、どう声をかければ子どもの「あ、そうか！」を引き出せるか（線分図の描き方、指で隠すコツなど）を具体的に1〜2文で記述してください。
 
@@ -149,7 +165,6 @@ def run_agy_generate(prompt: str, timeout_sec: int = 300) -> dict:
         raise RuntimeError(f"agy execution failed: {result.stderr.strip()}")
 
     cleaned = clean_json_output(result.stdout)
-    # JSON抽出（万が一前後に余計なテキストがある場合に対応）
     json_match = re.search(r'(\{[\s\S]*\})', cleaned)
     if json_match:
         json_str = json_match.group(1)
@@ -181,7 +196,11 @@ def process_queue() -> int:
         logger.info(f"Target detected: {q_id} (status: {item.get('status')}, needs_regeneration: {item.get('needs_regeneration')})")
 
         raw_rel_path = item.get("raw_image_path", "")
-        img_abs_path = REPO_DIR / raw_rel_path
+        # 相対パス（例: 30_Kids/SansuDrill/raw/xxx.jpg または raw/xxx.jpg）
+        if raw_rel_path.startswith("30_Kids/SansuDrill/"):
+            img_abs_path = FAMILY_VAULT_DIR / raw_rel_path
+        else:
+            img_abs_path = DATA_DIR / raw_rel_path
 
         try:
             prompt = build_agy_prompt(item, img_abs_path)
@@ -217,8 +236,9 @@ def process_queue() -> int:
     return processed_count
 
 def main():
-    logger.info("=== Sansu Drill agy Crawler Starting ===")
-    logger.info(f"Repo root: {REPO_DIR}")
+    logger.info("=== Sansu Drill agy Crawler Starting (family-vault integration) ===")
+    logger.info(f"Family Vault root: {FAMILY_VAULT_DIR}")
+    logger.info(f"Data Dir: {DATA_DIR}")
     logger.info(f"AGY binary: {AGY_BIN}")
 
     if "--once" in sys.argv:

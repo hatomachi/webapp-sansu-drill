@@ -56,6 +56,7 @@ export interface UserSettings {
   githubOwner: string;
   githubRepo: string;
   githubBranch: string;
+  dataPathPrefix: string;  // 例: "30_Kids/SansuDrill"
   geminiApiKey?: string;
   isDemoMode: boolean;
 }
