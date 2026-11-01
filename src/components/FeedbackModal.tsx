@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, MessageSquarePlus, Sparkles, Check } from 'lucide-react';
 import { QuestionItem } from '../types';
+import { getCurrentVariant } from '../utils/gemHelper';
 
 interface FeedbackModalProps {
   question: QuestionItem | null;
@@ -24,6 +25,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ question, onClose,
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!question) return null;
+
+  const currentVariant = getCurrentVariant(question);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -71,7 +74,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ question, onClose,
               現在の問題
             </label>
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 line-clamp-3">
-              {question.problem_plain_text}
+              {currentVariant.problem_plain_text}
             </div>
           </div>
 

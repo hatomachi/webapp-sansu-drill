@@ -92,14 +92,14 @@ export function getCurrentVariant(question: QuestionItem): ProblemVariant {
     return variants[0];
   }
 
-  // 後方互換フォールバック
+  // 万が一 variants が空の場合のフォールバック
   return {
-    problem_text: question.problem_text,
-    problem_plain_text: question.problem_plain_text,
-    formula: question.formula,
-    answer: question.answer,
-    explanation: question.explanation,
-    parent_hint: question.parent_hint,
+    problem_text: 'もんだいを よみこみちゅう...',
+    problem_plain_text: 'もんだいを よみこみちゅう...',
+    formula: '',
+    answer: '',
+    explanation: '',
+    parent_hint: '',
   };
 }
 

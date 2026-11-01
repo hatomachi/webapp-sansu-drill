@@ -316,14 +316,9 @@ def process_queue() -> int:
                         }]
                     item["variants"] = variants
 
-                    # 代表値（問1）をトップレベルにも保持（後方互換）
-                    first_v = variants[0]
-                    item["problem_text"] = first_v.get("problem_text", "")
-                    item["problem_plain_text"] = first_v.get("problem_plain_text", "")
-                    item["formula"] = first_v.get("formula", "")
-                    item["answer"] = first_v.get("answer", "")
-                    item["explanation"] = first_v.get("explanation", "")
-                    item["parent_hint"] = first_v.get("parent_hint", "")
+                    # トップレベルの重複フィールドをクリーンアップ（variantsへ一本化）
+                    for field in ["problem_text", "problem_plain_text", "formula", "answer", "explanation", "parent_hint"]:
+                        item.pop(field, None)
 
                     item["status"] = "stage1"  # ステージ1（初回確認待ち）に昇格
                     item["needs_regeneration"] = False

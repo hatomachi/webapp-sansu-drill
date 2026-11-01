@@ -50,16 +50,6 @@ export interface QuestionItem {
   // 3段階類題ストック（問1: オパール用 / 問2: サファイア用 / 問3: ダイヤ用）
   variants?: ProblemVariant[];
 
-  // AI生成類題（現在/代表値 - variants非対応時のフォールバック兼用）
-  problem_text: string;            // ルビ・ふりがな付きHTMLまたはテキスト
-  problem_plain_text: string;      // プレーンテキスト
-
-  // 解答・解説（親向け）
-  formula: string;                 // 例: "12 + 8 = 20"
-  answer: string;                  // 例: "20こ"
-  explanation: string;             // 親向け解説
-  parent_hint: string;             // 親の指導ヒント（声かけ・線分図の描き方など）
-
   // 親ツッコミ・再生成
   needs_regeneration?: boolean;    // 再生成待ちフラグ
   feedback_history: FeedbackLog[]; // 親のツッコミ履歴

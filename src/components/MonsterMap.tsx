@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, ChevronRight } from 'lucide-react';
 import { QuestionItem, StageConfig } from '../types';
 import { normalizeStatus } from '../services/storage';
-import { getGemInfo } from '../utils/gemHelper';
+import { getGemInfo, getCurrentVariant } from '../utils/gemHelper';
 
 interface MonsterMapProps {
   questions: QuestionItem[];
@@ -136,6 +136,7 @@ export const MonsterMap: React.FC<MonsterMapProps> = ({
             {filteredList.map((item) => {
               const itemStatus = normalizeStatus(item.status);
               const gem = getGemInfo(itemStatus);
+              const variant = getCurrentVariant(item);
               return (
                 <div
                   key={item.id}
@@ -157,7 +158,7 @@ export const MonsterMap: React.FC<MonsterMapProps> = ({
                           <span>{gem.name}</span>
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 line-clamp-1">{item.problem_plain_text}</p>
+                      <p className="text-xs text-slate-500 line-clamp-1">{variant.problem_plain_text}</p>
                     </div>
                   </div>
 
