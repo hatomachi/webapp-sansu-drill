@@ -11,7 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { QuestionItem, StageConfig } from '../types';
-import { getGemInfo, getStageLabel } from '../utils/gemHelper';
+import { getGemInfo, getStageLabel, getCurrentVariant, getCurrentVariantIndex } from '../utils/gemHelper';
 import { normalizeStatus } from '../services/storage';
 
 interface QuestionCardProps {
@@ -38,6 +38,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const status = normalizeStatus(question.status);
   const gemInfo = getGemInfo(status);
   const stageText = getStageLabel(status, stageConfig);
+  const currentVariant = getCurrentVariant(question);
+  const variantIndex = getCurrentVariantIndex(question);
 
   const handleDelete = () => {
     if (!onDelete) return;
@@ -71,6 +73,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             <span>{gemInfo.icon}</span>
             <span>{gemInfo.name} ({stageText})</span>
           </span>
+
+          {question.variants && question.variants.length > 0 && (
+            <span className="text-[11px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-200">
+              第{variantIndex + 1}問 ({variantIndex + 1}/3)
+            </span>
+          )}
 
           {question.needs_regeneration && (
             <span className="text-[11px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full border border-amber-300">
@@ -110,7 +118,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         {/* 問題文レンダリング（HTML ruby タグ対応） */}
         <div
           className="text-xl md:text-2xl font-medium text-slate-800 leading-loose tracking-wide font-sans select-text"
-          dangerouslySetInnerHTML={{ __html: question.problem_text }}
+          dangerouslySetInnerHTML={{ __html: currentVariant.problem_text }}
         />
       </div>
 
@@ -141,35 +149,35 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
           {showAnswer && (
             <div className="mt-3 pt-3 border-t border-amber-200/60 space-y-2.5 text-xs text-slate-700 animate-in fade-in duration-150">
-              {question.formula && (
+              {currentVariant.formula && (
                 <div className="flex items-baseline space-x-2">
                   <span className="font-bold text-amber-900 min-w-12">【立式】:</span>
                   <span className="font-mono text-base font-bold text-blue-700 bg-white px-2 py-0.5 rounded border border-blue-200">
-                    {question.formula}
+                    {currentVariant.formula}
                   </span>
                 </div>
               )}
-              {question.answer && (
+              {currentVariant.answer && (
                 <div className="flex items-baseline space-x-2">
                   <span className="font-bold text-amber-900 min-w-12">【答え】:</span>
                   <span className="font-bold text-base text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                    {question.answer}
+                    {currentVariant.answer}
                   </span>
                 </div>
               )}
-              {question.parent_hint && (
+              {currentVariant.parent_hint && (
                 <div className="bg-amber-100/70 p-3 rounded-xl border border-amber-200">
                   <div className="font-bold text-amber-950 mb-0.5 flex items-center space-x-1">
                     <Shield className="w-3.5 h-3.5 text-amber-700" />
                     <span>親の声かけ・つまずき指導ヒント:</span>
                   </div>
-                  <p className="text-amber-900 leading-relaxed">{question.parent_hint}</p>
+                  <p className="text-amber-900 leading-relaxed">{currentVariant.parent_hint}</p>
                 </div>
               )}
-              {question.explanation && (
+              {currentVariant.explanation && (
                 <div className="text-slate-600 text-[11px] leading-relaxed">
                   <span className="font-bold">解説: </span>
-                  {question.explanation}
+                  {currentVariant.explanation}
                 </div>
               )}
             </div>

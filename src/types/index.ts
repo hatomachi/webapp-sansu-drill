@@ -21,6 +21,15 @@ export interface FeedbackLog {
   quick_tags?: string[];
 }
 
+export interface ProblemVariant {
+  problem_text: string;            // ルビ・ふりがな付きHTMLまたはテキスト
+  problem_plain_text: string;      // プレーンテキスト
+  formula: string;                 // 例: "12 + 8 = 20"
+  answer: string;                  // 例: "20こ"
+  explanation: string;             // 親向け解説
+  parent_hint: string;             // 親の指導ヒント
+}
+
 export interface QuestionItem {
   id: string;                      // 固有ID (例: q_20261101_001)
   created_at: string;              // ISO日時
@@ -38,7 +47,10 @@ export interface QuestionItem {
   monster_name?: string;           // 題名・モチーフ（例: "どんぐりのくらべっこ", "ふしぎなクッキー"）
   monster_icon?: string;           // アイコン・絵文字（例: "🐿️", "🍪", "💧"）
 
-  // AI生成類題
+  // 3段階類題ストック（問1: オパール用 / 問2: サファイア用 / 問3: ダイヤ用）
+  variants?: ProblemVariant[];
+
+  // AI生成類題（現在/代表値 - variants非対応時のフォールバック兼用）
   problem_text: string;            // ルビ・ふりがな付きHTMLまたはテキスト
   problem_plain_text: string;      // プレーンテキスト
 

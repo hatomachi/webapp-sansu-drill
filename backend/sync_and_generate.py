@@ -126,18 +126,23 @@ def build_agy_prompt(item: dict, image_abs_path: Path) -> str:
 {child_context}
 {feedback_section}
 
-娘（小2）が紙のノートと鉛筆で解くための【最高の類題（1問）】と【親向けの丸つけ・指導ヒント】を生成してください。
+娘（小2）が紙のノートと鉛筆で解くための【最高の類題（3問セット）】と【親向けの丸つけ・指導ヒント】を生成してください。
+（※ ライトナー復習システムにより、1回目クリアでオパール、2回目でサファイア、3回目でダイヤモンドを獲得します。解き直すたびに答えを丸暗記しないよう、同等難易度の数字替え・シチュエーション替え類題を3問用意します）
 
 【厳格な教育的ガイドライン】
-1. ターゲット学年: 小学2年生
+1. 3段階類題（バリアント）の設計:
+   - 娘がつまずいた本質的な計算構造・立式手順（例: くり下がり筆算、逆算、時計の逆算等）は完全に同一にしてください。
+   - 難易度は3問とも完全に同等（レベルを無理に上げる必要はありません）。
+   - 数字、登場人物、アイテム、物語のシチュエーション（動物、お菓子、文房具、水族館、公園など）を変えて、毎回新鮮な気持ちで挑戦できるようにしてください。
+2. ターゲット学年: 小学2年生
    - 漢字にはすべて `<ruby>漢字<rt>かんじ</rt></ruby>` 形式でルビを振ってください（例: `<ruby>赤<rt>あか</rt></ruby>い りんご`）。
    - 小2が情景を思い浮かべられる自然な日本語・ストーリーにしてください。
-2. 綺麗な数字と適切な難易度:
+3. 綺麗な数字と適切な難易度:
    - 小2の手書き・筆算で解ける綺麗な自然数にしてください（答えが分数、小数、マイナス、不自然に巨大になるのは厳禁）。
-   - 登場人物やアイテム（どんぐり、折り紙、クッキー、シール、水そう、娘が好きな生き物等）を楽しくアレンジしてください。
-3. 親向け指導ヒント:
+   - 虫食い算や筆算の場合は、くり上がり・くり下がりの回数や位の位置関係を原問題と一致させてください。
+4. 親向け指導ヒント:
    - 親が赤ペンで丸つけする際、どう声をかければ子どもの「あ、そうか！」を引き出せるか（線分図の描き方、指で隠すコツなど）を具体的に1〜2文で記述してください。
-4. 算数リッチ表現（自己完結型HTML / Tailwind CSS / インラインSVG）:
+5. 算数リッチ表現（自己完結型HTML / Tailwind CSS / インラインSVG）:
    iPadの画面（Tailwind CSS導入済み）で美しく分かりやすく表示されるよう、問題形式に応じてHTMLタグ、Tailwindクラス、インラインSVGを自由に活用してください。外部CSSに頼らず、HTML内で自己完結させてください。
    - 【虫食いマス目（□や穴埋め）】:
      文字の `[ ]` や `□` ではなく、四角いマス目として表示してください。
@@ -179,17 +184,38 @@ def build_agy_prompt(item: dict, image_abs_path: Path) -> str:
      標準的な `<table>` タグに Tailwind クラス（`border border-slate-300`, `bg-slate-50` 等）をつけて描画してください。
 
 【出力フォーマット】
-以下のキーを持つ純粋なJSONオブジェクトのみを出力してください（解説文やMarkdown装飾は含めず、JSONテキストのみを出力してください）:
+以下のキーを持つ純粋なJSONオブジェクトのみを出力してください（解説文やMarkdown装飾は含めず、JSONテキストのみを出力してください）。
+variants には、同等難易度で数字やシチュエーションを変えた類題を【必ず3問】含めてください:
 {{
   "category": "単元名（例: たし算とひき算の文章題、たし算の逆算など）",
   "monster_name": "問題の題名・モチーフ（例: どんぐりのくらべっこ、ふしぎなクッキー、水そうのかさ）",
   "monster_icon": "題材を表す可愛い絵文字1文字（例: 🍪, 🐿️, 💧, 🎈, 🐟）",
-  "problem_text": "ルビ付きHTML（例: <ruby>赤<rt>あか</rt></ruby>い どんぐりが 24<ruby>個<rt>こ</rt></ruby>...）",
-  "problem_plain_text": "ルビなしプレーンテキスト",
-  "formula": "立式（例: 24 - 18 = 6）",
-  "answer": "答え（例: 6個）",
-  "explanation": "計算の手順や解説",
-  "parent_hint": "親の声かけ・線分図等の指導ヒント"
+  "variants": [
+    {{
+      "problem_text": "【問1（オパール用）】ルビ付きHTML（例: <ruby>赤<rt>あか</rt></ruby>い どんぐりが 24<ruby>個<rt>こ</rt></ruby>...）",
+      "problem_plain_text": "問1のルビなしプレーンテキスト",
+      "formula": "問1の立式（例: 24 - 18 = 6）",
+      "answer": "問1の答え（例: 6個）",
+      "explanation": "問1の計算手順や解説",
+      "parent_hint": "問1の親の声かけ・線分図等の指導ヒント"
+    }},
+    {{
+      "problem_text": "【問2（サファイア用・数字替え）】ルビ付きHTML（例: <ruby>青<rt>あお</rt></ruby>い シールが 35<ruby>枚<rt>まい</rt></ruby>...）",
+      "problem_plain_text": "問2のルビなしプレーンテキスト",
+      "formula": "問2の立式（例: 35 - 19 = 16）",
+      "answer": "問2の答え（例: 16枚）",
+      "explanation": "問2の計算手順や解説",
+      "parent_hint": "問2の親の声かけ・指導ヒント"
+    }},
+    {{
+      "problem_text": "【問3（ダイヤ用・数字替え）】ルビ付きHTML（例: クッキーが 42<ruby>個<rt>こ</rt></ruby>...）",
+      "problem_plain_text": "問3のルビなしプレーンテキスト",
+      "formula": "問3の立式（例: 42 - 27 = 15）",
+      "answer": "問3の答え（例: 15個）",
+      "explanation": "問3の計算手順や解説",
+      "parent_hint": "問3の親の声かけ・指導ヒント"
+    }}
+  ]
 }}
 """
     return prompt.strip()
@@ -273,12 +299,31 @@ def process_queue() -> int:
                     item["category"] = ai_data.get("category", item.get("category"))
                     item["monster_name"] = ai_data.get("monster_name", item.get("monster_name"))
                     item["monster_icon"] = ai_data.get("monster_icon", item.get("monster_icon", "👾"))
-                    item["problem_text"] = ai_data.get("problem_text", item.get("problem_text"))
-                    item["problem_plain_text"] = ai_data.get("problem_plain_text", item.get("problem_plain_text"))
-                    item["formula"] = ai_data.get("formula", "")
-                    item["answer"] = ai_data.get("answer", "")
-                    item["explanation"] = ai_data.get("explanation", "")
-                    item["parent_hint"] = ai_data.get("parent_hint", "")
+
+                    # 3段階類題（バリアント）の格納
+                    raw_variants = ai_data.get("variants")
+                    if isinstance(raw_variants, list) and len(raw_variants) > 0:
+                        variants = raw_variants
+                    else:
+                        # 単一形式で返ってきた場合の互換変換
+                        variants = [{
+                            "problem_text": ai_data.get("problem_text", item.get("problem_text", "")),
+                            "problem_plain_text": ai_data.get("problem_plain_text", item.get("problem_plain_text", "")),
+                            "formula": ai_data.get("formula", ""),
+                            "answer": ai_data.get("answer", ""),
+                            "explanation": ai_data.get("explanation", ""),
+                            "parent_hint": ai_data.get("parent_hint", "")
+                        }]
+                    item["variants"] = variants
+
+                    # 代表値（問1）をトップレベルにも保持（後方互換）
+                    first_v = variants[0]
+                    item["problem_text"] = first_v.get("problem_text", "")
+                    item["problem_plain_text"] = first_v.get("problem_plain_text", "")
+                    item["formula"] = first_v.get("formula", "")
+                    item["answer"] = first_v.get("answer", "")
+                    item["explanation"] = first_v.get("explanation", "")
+                    item["parent_hint"] = first_v.get("parent_hint", "")
 
                     item["status"] = "stage1"  # ステージ1（初回確認待ち）に昇格
                     item["needs_regeneration"] = False

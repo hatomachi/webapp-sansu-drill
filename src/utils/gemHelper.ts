@@ -1,4 +1,4 @@
-import { QuestionStatus, StageConfig } from '../types';
+import { QuestionStatus, StageConfig, QuestionItem, ProblemVariant } from '../types';
 import { normalizeStatus } from '../services/storage';
 
 export interface GemInfo {
@@ -69,4 +69,46 @@ export function getStageLabel(rawStatus: QuestionStatus, config: StageConfig): s
     default:
       return 'もんだい';
   }
+}
+
+/**
+ * 現在のステージ（オパール/サファイア/ダイヤ）に応じた出題バリアントを取得
+ * - stage1 (毎日) ➜ 問1 (variants[0])
+ * - stage2 (水・土) ➜ 問2 (variants[1])
+ * - stage3 (2週後) ➜ 問3 (variants[2])
+ * - 既存の1問データの場合はフォールバック
+ */
+export function getCurrentVariant(question: QuestionItem): ProblemVariant {
+  const status = normalizeStatus(question.status);
+  const variants = question.variants;
+
+  if (variants && variants.length > 0) {
+    if (status === 'stage2') {
+      return variants[1] || variants[0];
+    }
+    if (status === 'stage3' || status === 'mastered') {
+      return variants[2] || variants[1] || variants[0];
+    }
+    return variants[0];
+  }
+
+  // 後方互換フォールバック
+  return {
+    problem_text: question.problem_text,
+    problem_plain_text: question.problem_plain_text,
+    formula: question.formula,
+    answer: question.answer,
+    explanation: question.explanation,
+    parent_hint: question.parent_hint,
+  };
+}
+
+/**
+ * 現在の出題が何問目のバリアントか（0-indexed）を取得
+ */
+export function getCurrentVariantIndex(question: QuestionItem): number {
+  const status = normalizeStatus(question.status);
+  if (status === 'stage2') return 1;
+  if (status === 'stage3' || status === 'mastered') return 2;
+  return 0;
 }
