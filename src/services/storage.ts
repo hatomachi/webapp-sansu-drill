@@ -1,7 +1,35 @@
-import { QuestionItem, UserSettings, QuestionStatus } from '../types';
+import { QuestionItem, UserSettings, QuestionStatus, StageConfig } from '../types';
 
 const STORAGE_KEY_QUESTIONS = 'sansu_drill_questions_v1';
 const STORAGE_KEY_SETTINGS = 'sansu_drill_settings_v1';
+
+export const DEFAULT_STAGE_CONFIG: StageConfig = {
+  stage1Label: '毎日',
+  stage2Label: '水・土',
+  stage3Label: '2週後',
+};
+
+// 旧ステータスを3段階へ正規化する関数
+export function normalizeStatus(status: QuestionStatus): QuestionStatus {
+  if (status === 'day1_ready') return 'stage1';
+  if (status === 'day2_boss') return 'stage2';
+  if (status === 'weekend_boss') return 'stage3';
+  return status;
+}
+
+// 直近の水曜日または土曜日（2日以上先）を算出
+export function getNextWedOrSat(from: Date = new Date()): Date {
+  const day = from.getDay(); // 0:日, 1:月, 2:火, 3:水, 4:木, 5:金, 6:土
+  let daysToAdd = 3;
+  if (day === 0) daysToAdd = 3; // 日 ➜ 水 (+3)
+  else if (day === 1) daysToAdd = 2; // 月 ➜ 水 (+2)
+  else if (day === 2) daysToAdd = 4; // 火 ➜ 土 (+4)
+  else if (day === 3) daysToAdd = 3; // 水 ➜ 土 (+3)
+  else if (day === 4) daysToAdd = 2; // 木 ➜ 土 (+2)
+  else if (day === 5) daysToAdd = 5; // 金 ➜ 水 (+5)
+  else if (day === 6) daysToAdd = 4; // 土 ➜ 水 (+4)
+  return new Date(from.getTime() + daysToAdd * 24 * 3600 * 1000);
+}
 
 export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
   {
@@ -9,9 +37,9 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
     created_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
     updated_at: new Date().toISOString(),
     next_review_date: new Date().toISOString().split('T')[0],
-    status: 'day2_boss',
+    status: 'stage2',
     category: 'たし算とひき算（ちがいに目をつける）',
-    monster_name: 'どんぐりリス男爵',
+    monster_name: 'どんぐりのくらべっこ',
     monster_icon: '🐿️',
     problem_text: `<ruby>赤<rt>あか</rt></ruby>いどんぐりが 24<ruby>個<rt>こ</rt></ruby>、<ruby>青<rt>あお</rt></ruby>いどんぐりが 18<ruby>個<rt>こ</rt></ruby> あります。<br/><ruby>赤<rt>あか</rt></ruby>いどんぐりは、<ruby>青<rt>あお</rt></ruby>いどんぐりより <ruby>何個<rt>なんこ</rt></ruby> <ruby>多<rt>おお</rt></ruby>いですか。`,
     problem_plain_text: '赤いどんぐりが24個、青いどんぐりが18個あります。赤いどんぐりは、青いどんぐりより何個多いですか。',
@@ -26,7 +54,7 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
       {
         date: new Date(Date.now() - 24 * 3600 * 1000).toISOString().split('T')[0],
         result: 'correct',
-        stage: 'day1_ready',
+        stage: 'stage1',
       },
     ],
   },
@@ -35,10 +63,10 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
     created_at: new Date(Date.now() - 72 * 3600 * 1000).toISOString(),
     updated_at: new Date().toISOString(),
     next_review_date: new Date().toISOString().split('T')[0],
-    status: 'weekend_boss',
+    status: 'stage3',
     category: 'たし算の逆算（はじめの数を求める）',
-    monster_name: 'ふしぎのクッキー魔女',
-    monster_icon: '🧙‍♀️',
+    monster_name: 'ふしぎなクッキー',
+    monster_icon: '🍪',
     problem_text: `かごの <ruby>中<rt>なか</rt></ruby>に クッキーが <ruby>何枚<rt>なんまい</rt></ruby>か ありました。<br/>あとから 15<ruby>枚<rt>まい</rt></ruby> やいたら、ぜんぶで 32<ruby>枚<rt>まい</rt></ruby>に なりました。<br/>はじめに クッキーは <ruby>何枚<rt>なんまい</rt></ruby> ありましたか。`,
     problem_plain_text: 'かごの中にクッキーが何枚かありました。あとから15枚やいたら、ぜんぶで32枚になりました。はじめにクッキーは何枚ありましたか。',
     formula: '32 - 15 = 17',
@@ -58,12 +86,12 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
       {
         date: new Date(Date.now() - 72 * 3600 * 1000).toISOString().split('T')[0],
         result: 'correct',
-        stage: 'day1_ready',
+        stage: 'stage1',
       },
       {
         date: new Date(Date.now() - 48 * 3600 * 1000).toISOString().split('T')[0],
         result: 'correct',
-        stage: 'day2_boss',
+        stage: 'stage2',
       },
     ],
   },
@@ -72,9 +100,9 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     next_review_date: new Date().toISOString().split('T')[0],
-    status: 'day1_ready',
+    status: 'stage1',
     category: '水のかさ（LとdLの計算）',
-    monster_name: 'アクアゴーレム',
+    monster_name: '水そうのかさくらべ',
     monster_icon: '💧',
     problem_text: `水そうに 水が 2L 4dL はいっています。<br/>そこに 3dL の 水を くわえました。<br/>水は ぜんぶで <ruby>何<rt>なん</rt></ruby>L <ruby>何<rt>なん</rt></ruby>dL に なりましたか。`,
     problem_plain_text: '水そうに水が2L 4dL入っています。そこに3dLの水をくわえました。水はぜんぶで何L何dLになりましたか。',
@@ -96,6 +124,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   githubBranch: 'main',
   dataPathPrefix: '30_Kids/SansuDrill',
   isDemoMode: true,
+  stageConfig: DEFAULT_STAGE_CONFIG,
 };
 
 export class StorageService {
@@ -103,7 +132,15 @@ export class StorageService {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
       if (raw) {
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+        const parsed = JSON.parse(raw);
+        return {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          stageConfig: {
+            ...DEFAULT_STAGE_CONFIG,
+            ...(parsed.stageConfig || {}),
+          },
+        };
       }
     } catch (e) {
       console.warn('Failed to read settings from localStorage', e);
@@ -120,8 +157,12 @@ export class StorageService {
       const raw = localStorage.getItem(STORAGE_KEY_QUESTIONS);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+        if (Array.isArray(parsed)) {
+          // 既存ステータスを正規化
+          return parsed.map((q) => ({
+            ...q,
+            status: normalizeStatus(q.status),
+          }));
         }
       }
     } catch (e) {
@@ -134,6 +175,42 @@ export class StorageService {
 
   static saveLocalQuestions(questions: QuestionItem[]): void {
     localStorage.setItem(STORAGE_KEY_QUESTIONS, JSON.stringify(questions));
+  }
+
+  // 特定の問題を削除
+  static async deleteQuestion(questionId: string): Promise<QuestionItem[]> {
+    const questions = this.getLocalQuestions();
+    const updated = questions.filter((q) => q.id !== questionId);
+    this.saveLocalQuestions(updated);
+
+    const settings = this.getSettings();
+    if (settings.githubToken && !settings.isDemoMode) {
+      await this.commitQuestionsToGitHub(updated, `feat(question): delete question ${questionId}`);
+    }
+    return updated;
+  }
+
+  // サンプル問題（q_demo_で始まるもの）を一括削除
+  static async deleteSampleQuestions(): Promise<QuestionItem[]> {
+    const questions = this.getLocalQuestions();
+    const updated = questions.filter((q) => !q.id.startsWith('q_demo_'));
+    this.saveLocalQuestions(updated);
+
+    const settings = this.getSettings();
+    if (settings.githubToken && !settings.isDemoMode) {
+      await this.commitQuestionsToGitHub(updated, `feat(question): remove sample demo questions`);
+    }
+    return updated;
+  }
+
+  // すべての問題を初期化（空にする）
+  static async clearAllQuestions(): Promise<QuestionItem[]> {
+    this.saveLocalQuestions([]);
+    const settings = this.getSettings();
+    if (settings.githubToken && !settings.isDemoMode) {
+      await this.commitQuestionsToGitHub([], `feat(question): clear all questions`);
+    }
+    return [];
   }
 
   // GitHub から questions.json を fetch してマージ
@@ -154,7 +231,6 @@ export class StorageService {
       });
 
       if (res.status === 404) {
-        // まだリモートに questions.json がない場合は、現在のローカルデータをコミットして初期化
         await this.commitQuestionsToGitHub(this.getLocalQuestions(), 'chore: initialize questions.json');
         return { success: true, message: 'GitHubに初期データを作成しました', data: this.getLocalQuestions() };
       }
@@ -168,10 +244,14 @@ export class StorageService {
         escape(atob(fileData.content.replace(/\s/g, '')))
       );
       const remoteQuestions: QuestionItem[] = JSON.parse(content);
+      const normalized = remoteQuestions.map((q) => ({
+        ...q,
+        status: normalizeStatus(q.status),
+      }));
 
       // ローカル保存
-      this.saveLocalQuestions(remoteQuestions);
-      return { success: true, message: 'GitHubと同期しました', data: remoteQuestions };
+      this.saveLocalQuestions(normalized);
+      return { success: true, message: 'GitHubと同期しました', data: normalized };
     } catch (e: any) {
       console.error('GitHub sync error:', e);
       return { success: false, message: e.message || '同期エラー', data: this.getLocalQuestions() };
@@ -190,7 +270,6 @@ export class StorageService {
       const questionsPath = `${settings.dataPathPrefix || '30_Kids/SansuDrill'}/questions.json`;
       const url = `https://api.github.com/repos/${settings.githubOwner}/${settings.githubRepo}/contents/${questionsPath}`;
       
-      // 既存ファイルの SHA を取得
       let sha: string | undefined;
       const getRes = await fetch(`${url}?ref=${settings.githubBranch}`, {
         headers: {
@@ -258,9 +337,9 @@ export class StorageService {
       raw_image_base64: `data:image/jpeg;base64,${base64Raw}`,
       memo: memo || '',
       category: '未解析（AI解析中）',
-      monster_name: 'タマゴモンスター',
-      monster_icon: '🥚',
-      problem_text: '親が撮影した問題をAIが解析中です...<br/>（Macの常駐スクリプトまたは類題生成をお待ちください）',
+      monster_name: 'あたらしい問題',
+      monster_icon: '✨',
+      problem_text: '親が撮影した問題をAIが解析中です...<br/>（Macの常駐スクリプトによる類題生成をお待ちください）',
       problem_plain_text: '親が撮影した問題をAIが解析中です...',
       formula: '',
       answer: '',
@@ -293,7 +372,6 @@ export class StorageService {
       }
     }
 
-    // ローカル問題一覧に追加
     const questions = this.getLocalQuestions();
     const updated = [newQuestion, ...questions];
     await this.commitQuestionsToGitHub(updated, `feat(question): register new captured question ${id}`);
@@ -305,46 +383,50 @@ export class StorageService {
     };
   }
 
-  // ○×判定によるステータス遷移（ライトナー間隔反復）
+  // ○×判定によるステータス遷移（3段階宝石システム）
+  // ステージ1（毎日） ➜ 正解で オパール獲得 ＆ ステージ2（水・土）へ
+  // ステージ2（水・土） ➜ 正解で サファイア獲得 ＆ ステージ3（2週後）へ
+  // ステージ3（2週後） ➜ 正解で ダイヤモンド獲得 ＆ 殿堂入り（mastered）！
   static handleAnswerResult(question: QuestionItem, result: 'correct' | 'wrong'): QuestionItem {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
-    let nextStatus: QuestionStatus = question.status;
+    const currentStatus = normalizeStatus(question.status);
+    let nextStatus: QuestionStatus = currentStatus;
     let nextReviewDate = todayStr;
 
     if (result === 'correct') {
-      if (question.status === 'day1_ready' || question.status === 'inbox') {
-        // Day1 クリア ➡ 翌日ボス戦へ
-        nextStatus = 'day2_boss';
-        const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
-        nextReviewDate = tomorrow.toISOString().split('T')[0];
-      } else if (question.status === 'day2_boss') {
-        // Day2 翌日ボス戦クリア ➡ 週末ボス復活戦へ（銀メダル確定）
-        nextStatus = 'weekend_boss';
-        // 次の土曜または日曜（約3〜5日後）
-        const daysUntilWeekend = Math.max(2, (6 - now.getDay() + 7) % 7 || 7);
-        const weekend = new Date(now.getTime() + daysUntilWeekend * 24 * 3600 * 1000);
-        nextReviewDate = weekend.toISOString().split('T')[0];
-      } else if (question.status === 'weekend_boss') {
-        // 週末ボス戦クリア ➡ 殿堂入り（金キラキラ完全制覇！）
+      if (currentStatus === 'stage1' || currentStatus === 'inbox') {
+        // ステージ1 クリア ➜ オパール獲得！ 次は水・土
+        nextStatus = 'stage2';
+        const nextDate = getNextWedOrSat(now);
+        nextReviewDate = nextDate.toISOString().split('T')[0];
+      } else if (currentStatus === 'stage2') {
+        // ステージ2 クリア ➜ サファイア獲得！ 次は2週間後（14日後）
+        nextStatus = 'stage3';
+        const twoWeeksLater = new Date(now.getTime() + 14 * 24 * 3600 * 1000);
+        nextReviewDate = twoWeeksLater.toISOString().split('T')[0];
+      } else if (currentStatus === 'stage3') {
+        // ステージ3 クリア ➜ ダイヤモンド獲得！ 殿堂入り
         nextStatus = 'mastered';
         nextReviewDate = '';
       }
     } else {
       // 間違えた（×）場合
-      if (question.status === 'day2_boss') {
-        // 翌日ボスで苦戦 ➡ Day1に戻して翌日再挑戦
-        nextStatus = 'day1_ready';
+      if (currentStatus === 'stage2') {
+        // ステージ2で苦戦 ➜ ステージ1（毎日）に戻して翌日再挑戦
+        nextStatus = 'stage1';
         const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
         nextReviewDate = tomorrow.toISOString().split('T')[0];
-      } else if (question.status === 'weekend_boss') {
-        // 週末ボスで苦戦 ➡ 銀メダルキープで来週リベンジ（またはDay2降格）
-        nextStatus = 'day2_boss';
-        const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
-        nextReviewDate = tomorrow.toISOString().split('T')[0];
+      } else if (currentStatus === 'stage3') {
+        // ステージ3で苦戦 ➜ ステージ2（水・土）に戻して直近の水・土に再挑戦
+        nextStatus = 'stage2';
+        const nextDate = getNextWedOrSat(now);
+        nextReviewDate = nextDate.toISOString().split('T')[0];
       } else {
-        // 据え置き
-        nextStatus = 'day1_ready';
+        // ステージ1で苦戦 ➜ ステージ1維持、翌日再挑戦
+        nextStatus = 'stage1';
+        const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
+        nextReviewDate = tomorrow.toISOString().split('T')[0];
       }
     }
 
@@ -359,7 +441,7 @@ export class StorageService {
         {
           date: todayStr,
           result,
-          stage: question.status,
+          stage: currentStatus,
         },
       ],
     };

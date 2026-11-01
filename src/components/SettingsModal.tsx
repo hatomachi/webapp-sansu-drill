@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, Save, Key, Github, RefreshCw, ShieldCheck } from 'lucide-react';
-import { UserSettings } from '../types';
-import { StorageService, INITIAL_MOCK_QUESTIONS } from '../services/storage';
+import { X, Save, Key, RefreshCw, ShieldCheck, Trash2, Calendar, Gem } from 'lucide-react';
+import { UserSettings, StageConfig } from '../types';
+import { StorageService, INITIAL_MOCK_QUESTIONS, DEFAULT_STAGE_CONFIG } from '../services/storage';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -30,6 +30,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }, 600);
   };
 
+  const handleDeleteSamples = async () => {
+    if (window.confirm('初期サンプル問題（どんぐり・クッキー・水そう）をすべて削除しますか？\n（自分で撮影した問題のみが残ります）')) {
+      await StorageService.deleteSampleQuestions();
+      onSettingsSaved();
+      alert('サンプル問題を削除しました');
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (window.confirm('本当にすべての問題データを削除して空にしますか？\n※復元できませんのでご注意ください。')) {
+      await StorageService.clearAllQuestions();
+      onSettingsSaved();
+      alert('すべての問題データをクリアしました');
+    }
+  };
+
   const handleResetDemoData = () => {
     if (window.confirm('ローカルの問題データを初期デモデータにリセットしますか？')) {
       StorageService.saveLocalQuestions(INITIAL_MOCK_QUESTIONS);
@@ -38,17 +54,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  const stageConfig: StageConfig = settings.stageConfig || DEFAULT_STAGE_CONFIG;
+
+  const handleStageConfigChange = (key: keyof StageConfig, value: string) => {
+    setSettings({
+      ...settings,
+      stageConfig: {
+        ...stageConfig,
+        [key]: value,
+      },
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
           <div className="flex items-center space-x-2">
             <div className="p-1.5 bg-slate-800 text-white rounded-lg">
-              <Github className="w-5 h-5" />
+              <Gem className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800">アプリ設定 & 同期</h3>
-              <p className="text-xs text-slate-500">GitHub API経由で写真・データを同期</p>
+              <h3 className="font-bold text-slate-800">アプリ設定 & 復習スケジュール</h3>
+              <p className="text-xs text-slate-500">段階ラベル・GitHub同期・データ管理</p>
             </div>
           </div>
           <button
@@ -59,12 +87,66 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="p-5 space-y-4">
+        <form onSubmit={handleSave} className="p-5 space-y-4 overflow-y-auto flex-1">
+          {/* 3段階復習のラベル自由入力 */}
+          <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-2xl space-y-3">
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-4 h-4 text-amber-700" />
+              <span className="text-xs font-bold text-amber-950">
+                3段階の復習ラベル（自由入力）
+              </span>
+            </div>
+            <p className="text-[11px] text-amber-800 leading-relaxed">
+              娘さんの学習リズムに合わせて、各ステップの呼び名（毎日、水・土、2週後など）を自由に変更できます。
+            </p>
+
+            <div className="space-y-2">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                  ① ステップ1（初回・撮影直後）
+                </label>
+                <input
+                  type="text"
+                  value={stageConfig.stage1Label}
+                  onChange={(e) => handleStageConfigChange('stage1Label', e.target.value)}
+                  placeholder="毎日"
+                  className="w-full text-xs p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                  ② ステップ2（⚪️ オパール獲得後）
+                </label>
+                <input
+                  type="text"
+                  value={stageConfig.stage2Label}
+                  onChange={(e) => handleStageConfigChange('stage2Label', e.target.value)}
+                  placeholder="水・土"
+                  className="w-full text-xs p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                  ③ ステップ3（🔷 サファイア獲得後）
+                </label>
+                <input
+                  type="text"
+                  value={stageConfig.stage3Label}
+                  onChange={(e) => handleStageConfigChange('stage3Label', e.target.value)}
+                  placeholder="2週後"
+                  className="w-full text-xs p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* デモモード切替 */}
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
             <div>
               <span className="text-xs font-bold text-blue-900 block">ローカルデモモード</span>
-              <span className="text-[11px] text-blue-700">GitHub未設定でも端末内だけで全機能体験可能</span>
+              <span className="text-[11px] text-blue-700">GitHub未設定でも端末内だけで動作可能</span>
             </div>
             <input
               type="checkbox"
@@ -87,9 +169,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               placeholder="ghp_xxxxxxxxxxxx"
               className="w-full text-xs font-mono p-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-[10px] text-slate-400 mt-0.5">
-              ※ repo 権限（contents:write）を持つトークンを入力（ブラウザ内にのみ保存されます）
-            </p>
           </div>
 
           {/* リポジトリ設定 */}
@@ -136,16 +215,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* デモデータリセット */}
-          <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-            <button
-              type="button"
-              onClick={handleResetDemoData}
-              className="text-xs text-rose-600 hover:text-rose-800 font-medium flex items-center space-x-1"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>デモデータを初期化</span>
-            </button>
+          {/* データ削除・管理オペレーション */}
+          <div className="pt-3 border-t border-slate-200 space-y-2">
+            <span className="text-xs font-bold text-slate-700 block">データ管理オペレーション</span>
+            
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleDeleteSamples}
+                className="w-full px-3 py-2 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl font-bold flex items-center justify-center space-x-1.5 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>サンプル問題のみを消す（実データのみ残す）</span>
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="flex-1 px-3 py-2 text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl font-medium flex items-center justify-center space-x-1 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>全データをクリア</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetDemoData}
+                  className="flex-1 px-3 py-2 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl font-medium flex items-center justify-center space-x-1 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>サンプルを復元</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {saveStatus && (

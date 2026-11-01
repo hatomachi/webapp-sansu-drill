@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Settings, RefreshCw, UserCheck, Sparkles, Map } from 'lucide-react';
+import { Camera, Settings, RefreshCw, UserCheck, Sparkles, Gem } from 'lucide-react';
 
 interface HeaderProps {
   isParentMode: boolean;
@@ -29,8 +29,8 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* 左: ロゴとビュー切り替え */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-200">
-            <span className="text-xl font-bold font-sans">算</span>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-200 text-lg">
+            💎
           </div>
           <div>
             <div className="flex items-center space-x-2">
@@ -38,16 +38,16 @@ export const Header: React.FC<HeaderProps> = ({
                 Sansu Drill
               </h1>
               {dueCount > 0 && (
-                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-500 text-white animate-pulse">
+                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-600 text-white animate-pulse">
                   本日 {dueCount} 問
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500">文章題モンスター討伐クエスト</p>
+            <p className="text-xs text-slate-500">算数ジュエルクエスト（宝石あつめ）</p>
           </div>
         </div>
 
-        {/* 中央: クエスト / 図鑑タブ */}
+        {/* 中央: もんだい / 宝石タブ */}
         <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-medium">
           <button
             onClick={() => onViewChange('quest')}
@@ -57,8 +57,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>クエスト</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>もんだい</span>
           </button>
           <button
             onClick={() => onViewChange('map')}
@@ -68,8 +68,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Map className="w-3.5 h-3.5" />
-            <span>制覇マップ</span>
+            <Gem className="w-3.5 h-3.5 text-blue-500" />
+            <span>宝石コレクション</span>
           </button>
         </div>
 
@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* 親モード切替スイッチ */}
           <button
             onClick={onToggleParentMode}
-            title={isParentMode ? '親モード中（解答・ツッコミ表示）' : '子どもモード中'}
+            title={isParentMode ? '親モード中（解答・ツッコミ・削除ボタン表示）' : '娘モード中'}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
               isParentMode
                 ? 'bg-amber-100 border-amber-300 text-amber-800'
@@ -113,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenSettings}
             className="p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors"
-            title="設定（GitHub PATなど）"
+            title="設定（復習ラベル・GitHub PAT・サンプル削除など）"
           >
             <Settings className="w-4 h-4" />
           </button>

@@ -8,10 +8,11 @@ import { OriginalImageModal } from './components/OriginalImageModal';
 import { SettingsModal } from './components/SettingsModal';
 import { QuestionCard } from './components/QuestionCard';
 import { StorageService } from './services/storage';
-import { QuestionItem } from './types';
+import { QuestionItem, UserSettings } from './types';
 
 export const App: React.FC = () => {
   const [questions, setQuestions] = useState<QuestionItem[]>(() => StorageService.getLocalQuestions());
+  const [settings, setSettings] = useState<UserSettings>(() => StorageService.getSettings());
   const [isParentMode, setIsParentMode] = useState<boolean>(true);
   const [currentView, setCurrentView] = useState<'quest' | 'map'>('quest');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
@@ -51,7 +52,6 @@ export const App: React.FC = () => {
     const newQuestions = questions.map((q) => (q.id === questionId ? updated : q));
     setQuestions(newQuestions);
 
-    // リモートまたはローカルへ保存
     await StorageService.commitQuestionsToGitHub(
       newQuestions,
       `feat(review): mark question ${questionId} as ${result} (status: ${updated.status})`
@@ -59,6 +59,15 @@ export const App: React.FC = () => {
 
     if (detailQuestion && detailQuestion.id === questionId) {
       setDetailQuestion(updated);
+    }
+  };
+
+  // 問題削除
+  const handleDeleteQuestion = async (questionId: string) => {
+    const updated = await StorageService.deleteQuestion(questionId);
+    setQuestions(updated);
+    if (detailQuestion && detailQuestion.id === questionId) {
+      setDetailQuestion(null);
     }
   };
 
@@ -85,8 +94,13 @@ export const App: React.FC = () => {
   const handleQuestionAdded = (newQuestion: QuestionItem) => {
     const updated = [newQuestion, ...questions];
     setQuestions(updated);
-    // クエストビューに戻す
     setCurrentView('quest');
+  };
+
+  // 設定保存時
+  const handleSettingsSaved = () => {
+    setSettings(StorageService.getSettings());
+    setQuestions(StorageService.getLocalQuestions());
   };
 
   // 今日の対象問題数（未完了）
@@ -122,23 +136,28 @@ export const App: React.FC = () => {
             <QuestionCard
               question={detailQuestion}
               isParentMode={isParentMode}
+              stageConfig={settings.stageConfig}
               onAnswer={handleAnswer}
               onOpenFeedback={(q) => setFeedbackQuestion(q)}
               onOpenOriginalImage={(q) => setOriginalImageQuestion(q)}
+              onDelete={handleDeleteQuestion}
             />
           </div>
         ) : currentView === 'quest' ? (
           <BossDeck
             questions={questions}
             isParentMode={isParentMode}
+            stageConfig={settings.stageConfig}
             onAnswer={handleAnswer}
             onOpenFeedback={(q) => setFeedbackQuestion(q)}
             onOpenOriginalImage={(q) => setOriginalImageQuestion(q)}
             onOpenCapture={() => setIsCaptureOpen(true)}
+            onDelete={handleDeleteQuestion}
           />
         ) : (
           <MonsterMap
             questions={questions}
+            stageConfig={settings.stageConfig}
             onSelectQuestion={(q) => setDetailQuestion(q)}
           />
         )}
@@ -165,7 +184,7 @@ export const App: React.FC = () => {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        onSettingsSaved={() => setQuestions(StorageService.getLocalQuestions())}
+        onSettingsSaved={handleSettingsSaved}
       />
     </div>
   );

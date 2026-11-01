@@ -25,17 +25,24 @@
   }
 }
 
-/* メダル・ステータスのリッチなエフェクト */
-.badge-silver {
-  background: linear-gradient(135deg, #E2E8F0 0%, #94A3B8 50%, #CBD5E1 100%);
-  color: #1E293B;
-  box-shadow: 0 2px 8px rgba(148, 163, 184, 0.4);
+/* 宝石ステータスのリッチなエフェクト */
+.badge-opal {
+  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 40%, #EDE9FE 70%, #CFFAFE 100%);
+  color: #334155;
+  box-shadow: 0 2px 8px rgba(203, 213, 225, 0.6);
+  border: 1px solid #CBD5E1;
 }
 
-.badge-gold {
-  background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #FEF08A 100%);
+.badge-sapphire {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 50%, #60A5FA 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+.badge-diamond {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FDE68A 30%, #BAE6FD 60%, #FEF08A 100%);
   color: #78350F;
-  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.5);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
   animation: shimmer 3s infinite linear;
 }
 

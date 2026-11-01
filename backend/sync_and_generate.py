@@ -128,8 +128,8 @@ def build_agy_prompt(item: dict, image_abs_path: Path) -> str:
 以下のキーを持つ純粋なJSONオブジェクトのみを出力してください（解説文やMarkdown装飾は含めず、JSONテキストのみを出力してください）:
 {{
   "category": "単元名（例: たし算とひき算の文章題、たし算の逆算など）",
-  "monster_name": "親しみやすいモンスター名（例: ふしぎのクッキー魔女）",
-  "monster_icon": "モンスターを表す絵文字1文字（例: 🧙‍♀️, 🐉, 💧, 🐿️）",
+  "monster_name": "問題の題名・モチーフ（例: どんぐりのくらべっこ、ふしぎなクッキー、水そうのかさ）",
+  "monster_icon": "題材を表す可愛い絵文字1文字（例: 🍪, 🐿️, 💧, 🎈, 🐟）",
   "problem_text": "ルビ付きHTML（例: <ruby>赤<rt>あか</rt></ruby>い どんぐりが 24<ruby>個<rt>こ</rt></ruby>...）",
   "problem_plain_text": "ルビなしプレーンテキスト",
   "formula": "立式（例: 24 - 18 = 6）",
@@ -217,7 +217,7 @@ def process_queue() -> int:
             item["explanation"] = ai_data.get("explanation", "")
             item["parent_hint"] = ai_data.get("parent_hint", "")
 
-            item["status"] = "day1_ready"  # Day 1 初回確認待ちに昇格
+            item["status"] = "stage1"  # ステージ1（初回確認待ち）に昇格
             item["needs_regeneration"] = False
             item["updated_at"] = datetime.utcnow().isoformat() + "Z"
 

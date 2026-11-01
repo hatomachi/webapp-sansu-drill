@@ -8,83 +8,57 @@ import {
   Image as ImageIcon,
   MessageSquarePlus,
   Shield,
-  Sparkles,
-  Award,
-  Crown,
+  Trash2,
 } from 'lucide-react';
-import { QuestionItem, QuestionStatus } from '../types';
+import { QuestionItem, StageConfig } from '../types';
+import { getGemInfo, getStageLabel } from '../utils/gemHelper';
+import { normalizeStatus } from '../services/storage';
 
 interface QuestionCardProps {
   question: QuestionItem;
   isParentMode: boolean;
+  stageConfig?: StageConfig;
   onAnswer: (questionId: string, result: 'correct' | 'wrong') => void;
   onOpenFeedback: (question: QuestionItem) => void;
   onOpenOriginalImage: (question: QuestionItem) => void;
+  onDelete?: (questionId: string) => void;
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   isParentMode,
+  stageConfig = { stage1Label: '毎日', stage2Label: '水・土', stage3Label: '2週後' },
   onAnswer,
   onOpenFeedback,
   onOpenOriginalImage,
+  onDelete,
 }) => {
   const [showAnswer, setShowAnswer] = useState(false);
 
-  // ステータスに応じたバッジ
-  const renderStatusBadge = (status: QuestionStatus) => {
-    switch (status) {
-      case 'day1_ready':
-        return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Day 1 初回ボス</span>
-          </span>
-        );
-      case 'day2_boss':
-        return (
-          <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold badge-silver">
-            <Award className="w-3.5 h-3.5 text-slate-700" />
-            <span>Day 2 翌日ボス戦（銀メダル挑戦！）</span>
-          </span>
-        );
-      case 'weekend_boss':
-        return (
-          <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold badge-gold">
-            <Crown className="w-3.5 h-3.5 text-amber-900" />
-            <span>週末ボス復活戦（完全マスター挑戦！）</span>
-          </span>
-        );
-      case 'mastered':
-        return (
-          <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-            <Crown className="w-3.5 h-3.5 text-emerald-600" />
-            <span>殿堂入り（完全制覇）</span>
-          </span>
-        );
-      case 'inbox':
-        return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 animate-pulse">
-            <span>🥚 AI解析待ち</span>
-          </span>
-        );
-      default:
-        return null;
+  const status = normalizeStatus(question.status);
+  const gemInfo = getGemInfo(status);
+  const stageText = getStageLabel(status, stageConfig);
+
+  const handleDelete = () => {
+    if (!onDelete) return;
+    const title = question.monster_name || question.category;
+    if (window.confirm(`「${title}」の問題を削除しますか？\n※削除すると元に戻せません。`)) {
+      onDelete(question.id);
     }
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-md hover:shadow-lg transition-all overflow-hidden flex flex-col">
+    <div className={`bg-white rounded-3xl border shadow-md hover:shadow-lg transition-all overflow-hidden flex flex-col ${gemInfo.cardBorder}`}>
       {/* カードヘッダー */}
       <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="text-3xl filter drop-shadow-sm p-1 bg-white rounded-2xl border border-slate-100">
-            {question.monster_icon || '👾'}
+          <div className="text-3xl filter drop-shadow-sm p-2 bg-white rounded-2xl border border-slate-100 flex items-center justify-center">
+            {question.monster_icon || gemInfo.icon}
           </div>
           <div>
             <div className="flex items-center space-x-2">
               <h2 className="text-base font-bold text-slate-800">
-                {question.monster_name || '文章題モンスター'}
+                {question.monster_name || question.category}
               </h2>
             </div>
             <p className="text-xs text-slate-500 font-medium">{question.category}</p>
@@ -92,11 +66,28 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
-          {renderStatusBadge(question.status)}
+          {/* ステージ・宝石バッジ */}
+          <span className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold ${gemInfo.badgeClass}`}>
+            <span>{gemInfo.icon}</span>
+            <span>{gemInfo.name} ({stageText})</span>
+          </span>
+
           {question.needs_regeneration && (
             <span className="text-[11px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full border border-amber-300">
               🔄 再生成要求中
             </span>
+          )}
+
+          {/* 親モード時の削除ボタン */}
+          {isParentMode && onDelete && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors ml-1"
+              title="この問題を削除"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           )}
         </div>
       </div>
@@ -208,7 +199,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             className="flex items-center space-x-1.5 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold shadow-md shadow-emerald-200 transition-all active:scale-95"
           >
             <CheckCircle className="w-4 h-4" />
-            <span>できた！（○ 討伐成功）</span>
+            <span>できた！（○ 宝石ゲット）</span>
           </button>
         </div>
       </div>

@@ -1,9 +1,19 @@
 export type QuestionStatus =
   | 'inbox'         // 写真撮影直後（AI類題生成待ち）
-  | 'day1_ready'    // Day1: 初回確認待ち（紙と鉛筆で一度解いてみる）
-  | 'day2_boss'     // Day2: 翌日ボス戦（銀メダル仮討伐チャンス）
-  | 'weekend_boss'  // 週末: ボス復活戦（金キラキラ完全制覇チャンス）
-  | 'mastered';     // 殿堂入り（完全マスター）
+  | 'stage1'        // ステージ1: 最初（毎日）
+  | 'stage2'        // ステージ2: 復習（水・土など） - オパール獲得
+  | 'stage3'        // ステージ3: 総仕上げ（2週後など） - サファイア獲得
+  | 'mastered'      // 殿堂入り - ダイヤモンド獲得！
+  // 旧ステータス（後方互換）
+  | 'day1_ready'
+  | 'day2_boss'
+  | 'weekend_boss';
+
+export interface StageConfig {
+  stage1Label: string; // 例: "毎日"
+  stage2Label: string; // 例: "水・土"
+  stage3Label: string; // 例: "2週後"
+}
 
 export interface FeedbackLog {
   timestamp: string;
@@ -25,8 +35,8 @@ export interface QuestionItem {
 
   // 単元・カテゴリー
   category: string;                // 例: "たし算とひき算の文章題", "水のかさ", "たし算の逆算（線分図）"
-  monster_name: string;            // 例: "水のかさモンスター・リッター", "あわせるドラゴン"
-  monster_icon: string;            // 絵文字またはアイコン名 (例: "🐉", "💧", "🧙‍♂️")
+  monster_name?: string;           // 題名・モチーフ（例: "どんぐりのくらべっこ", "ふしぎなクッキー"）
+  monster_icon?: string;           // アイコン・絵文字（例: "🐿️", "🍪", "💧"）
 
   // AI生成類題
   problem_text: string;            // ルビ・ふりがな付きHTMLまたはテキスト
@@ -42,7 +52,7 @@ export interface QuestionItem {
   needs_regeneration?: boolean;    // 再生成待ちフラグ
   feedback_history: FeedbackLog[]; // 親のツッコミ履歴
 
-  // 討伐履歴
+  // 達成・正解履歴
   consecutive_correct: number;     // 連続正解数
   history: Array<{
     date: string;
@@ -59,4 +69,5 @@ export interface UserSettings {
   dataPathPrefix: string;  // 例: "30_Kids/SansuDrill"
   geminiApiKey?: string;
   isDemoMode: boolean;
+  stageConfig: StageConfig;
 }

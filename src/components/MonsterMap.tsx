@@ -1,82 +1,98 @@
 import React, { useState } from 'react';
-import { Award, Crown, Sparkles, ChevronRight } from 'lucide-react';
-import { QuestionItem, QuestionStatus } from '../types';
+import { Sparkles, ChevronRight } from 'lucide-react';
+import { QuestionItem, StageConfig } from '../types';
+import { normalizeStatus } from '../services/storage';
+import { getGemInfo } from '../utils/gemHelper';
 
 interface MonsterMapProps {
   questions: QuestionItem[];
+  stageConfig?: StageConfig;
   onSelectQuestion: (question: QuestionItem) => void;
 }
 
-export const MonsterMap: React.FC<MonsterMapProps> = ({ questions, onSelectQuestion }) => {
-  const [filterStage, setFilterStage] = useState<'all' | QuestionStatus>('all');
+export const MonsterMap: React.FC<MonsterMapProps> = ({
+  questions,
+  stageConfig = { stage1Label: '毎日', stage2Label: '水・土', stage3Label: '2週後' },
+  onSelectQuestion,
+}) => {
+  const [filterStage, setFilterStage] = useState<'all' | 'stage1' | 'stage2' | 'stage3' | 'mastered'>('all');
 
-  const groups: Record<QuestionStatus, QuestionItem[]> = {
-    inbox: questions.filter((q) => q.status === 'inbox'),
-    day1_ready: questions.filter((q) => q.status === 'day1_ready'),
-    day2_boss: questions.filter((q) => q.status === 'day2_boss'),
-    weekend_boss: questions.filter((q) => q.status === 'weekend_boss'),
-    mastered: questions.filter((q) => q.status === 'mastered'),
+  // ステータスを正規化してグルーピング
+  const groups: Record<'stage1' | 'stage2' | 'stage3' | 'mastered', QuestionItem[]> = {
+    stage1: questions.filter((q) => {
+      const s = normalizeStatus(q.status);
+      return s === 'stage1' || s === 'inbox';
+    }),
+    stage2: questions.filter((q) => normalizeStatus(q.status) === 'stage2'),
+    stage3: questions.filter((q) => normalizeStatus(q.status) === 'stage3'),
+    mastered: questions.filter((q) => normalizeStatus(q.status) === 'mastered'),
   };
 
   const filteredList =
-    filterStage === 'all' ? questions : questions.filter((q) => q.status === filterStage);
+    filterStage === 'all'
+      ? questions
+      : questions.filter((q) => {
+          const s = normalizeStatus(q.status);
+          if (filterStage === 'stage1') return s === 'stage1' || s === 'inbox';
+          return s === filterStage;
+        });
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* 4つの部屋（ライトナー仕分け状況サマリー） */}
+      {/* 4つの宝石ボックス（ライトナー仕分けサマリー） */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* ① Day1 / 未討伐 */}
+        {/* ① ステージ1 */}
         <button
-          onClick={() => setFilterStage(filterStage === 'day1_ready' ? 'all' : 'day1_ready')}
+          onClick={() => setFilterStage(filterStage === 'stage1' ? 'all' : 'stage1')}
           className={`p-4 rounded-2xl border text-left transition-all ${
-            filterStage === 'day1_ready'
+            filterStage === 'stage1'
+              ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-300'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between text-emerald-600 mb-2">
+            <Sparkles className="w-5 h-5 text-emerald-500" />
+            <span className="text-xl font-black font-mono">{groups.stage1.length}</span>
+          </div>
+          <div className="text-xs font-bold text-slate-800">① {stageConfig.stage1Label || '毎日'}</div>
+          <div className="text-[10px] text-slate-500">初回・再挑戦</div>
+        </button>
+
+        {/* ② ステージ2: オパール */}
+        <button
+          onClick={() => setFilterStage(filterStage === 'stage2' ? 'all' : 'stage2')}
+          className={`p-4 rounded-2xl border text-left transition-all ${
+            filterStage === 'stage2'
+              ? 'bg-stone-100 border-stone-400 ring-2 ring-stone-300'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xl">⚪️</span>
+            <span className="text-xl font-black font-mono text-stone-700">{groups.stage2.length}</span>
+          </div>
+          <div className="text-xs font-bold text-slate-800">② オパール</div>
+          <div className="text-[10px] text-slate-500">{stageConfig.stage2Label || '水・土'} (1回クリア)</div>
+        </button>
+
+        {/* ③ ステージ3: サファイア */}
+        <button
+          onClick={() => setFilterStage(filterStage === 'stage3' ? 'all' : 'stage3')}
+          className={`p-4 rounded-2xl border text-left transition-all ${
+            filterStage === 'stage3'
               ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-300'
               : 'bg-white border-slate-200 hover:border-slate-300'
           }`}
         >
-          <div className="flex items-center justify-between text-blue-600 mb-2">
-            <Sparkles className="w-5 h-5" />
-            <span className="text-xl font-black font-mono">{groups.day1_ready.length}</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xl">🔷</span>
+            <span className="text-xl font-black font-mono text-blue-700">{groups.stage3.length}</span>
           </div>
-          <div className="text-xs font-bold text-slate-800">① 明日やる</div>
-          <div className="text-[10px] text-slate-500">Day1 インストール済</div>
+          <div className="text-xs font-bold text-slate-800">③ サファイア</div>
+          <div className="text-[10px] text-slate-500">{stageConfig.stage3Label || '2週後'} (2回クリア)</div>
         </button>
 
-        {/* ② Day2 翌日ボス戦 */}
-        <button
-          onClick={() => setFilterStage(filterStage === 'day2_boss' ? 'all' : 'day2_boss')}
-          className={`p-4 rounded-2xl border text-left transition-all ${
-            filterStage === 'day2_boss'
-              ? 'bg-slate-100 border-slate-400 ring-2 ring-slate-300'
-              : 'bg-white border-slate-200 hover:border-slate-300'
-          }`}
-        >
-          <div className="flex items-center justify-between text-slate-600 mb-2">
-            <span className="text-lg">⚔️</span>
-            <span className="text-xl font-black font-mono">{groups.day2_boss.length}</span>
-          </div>
-          <div className="text-xs font-bold text-slate-800">② 翌日ボス戦</div>
-          <div className="text-[10px] text-slate-500">銀メダル挑戦</div>
-        </button>
-
-        {/* ③ 週末ボス戦（銀メダル） */}
-        <button
-          onClick={() => setFilterStage(filterStage === 'weekend_boss' ? 'all' : 'weekend_boss')}
-          className={`p-4 rounded-2xl border text-left transition-all ${
-            filterStage === 'weekend_boss'
-              ? 'bg-slate-50 border-slate-400 ring-2 ring-slate-300'
-              : 'bg-white border-slate-200 hover:border-slate-300'
-          }`}
-        >
-          <div className="flex items-center justify-between text-slate-700 mb-2">
-            <Award className="w-5 h-5 text-slate-600" />
-            <span className="text-xl font-black font-mono">{groups.weekend_boss.length}</span>
-          </div>
-          <div className="text-xs font-bold text-slate-800">③ 週末ボス戦</div>
-          <div className="text-[10px] text-slate-500">銀メダル仮討伐中</div>
-        </button>
-
-        {/* ④ 殿堂入り（金キラキラ） */}
+        {/* ④ 殿堂入り: ダイヤモンド */}
         <button
           onClick={() => setFilterStage(filterStage === 'mastered' ? 'all' : 'mastered')}
           className={`p-4 rounded-2xl border text-left transition-all ${
@@ -85,21 +101,21 @@ export const MonsterMap: React.FC<MonsterMapProps> = ({ questions, onSelectQuest
               : 'bg-white border-slate-200 hover:border-slate-300'
           }`}
         >
-          <div className="flex items-center justify-between text-amber-600 mb-2">
-            <Crown className="w-5 h-5 text-amber-500" />
-            <span className="text-xl font-black font-mono">{groups.mastered.length}</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xl">💎</span>
+            <span className="text-xl font-black font-mono text-amber-700">{groups.mastered.length}</span>
           </div>
-          <div className="text-xs font-bold text-slate-800">④ 殿堂入り</div>
-          <div className="text-[10px] text-slate-500">金キラキラ完全制覇！</div>
+          <div className="text-xs font-bold text-slate-800">④ ダイヤモンド</div>
+          <div className="text-[10px] text-slate-500">完全制覇・殿堂入り！</div>
         </button>
       </div>
 
-      {/* 問題一覧 */}
+      {/* 宝石コレクション問題一覧 */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-bold text-slate-800">モンスター一覧</span>
-            <span className="text-xs text-slate-400 font-mono">({filteredList.length} 匹)</span>
+            <span className="text-sm font-bold text-slate-800">宝石コレクション一覧</span>
+            <span className="text-xs text-slate-400 font-mono">({filteredList.length} 問)</span>
           </div>
           {filterStage !== 'all' && (
             <button
@@ -113,44 +129,47 @@ export const MonsterMap: React.FC<MonsterMapProps> = ({ questions, onSelectQuest
 
         {filteredList.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs">
-            該当するモンスターはいません
+            該当する問題はありません
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filteredList.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => onSelectQuestion(item)}
-                className="p-4 hover:bg-slate-50 flex items-center justify-between cursor-pointer transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl p-1.5 bg-slate-100 rounded-xl">
-                    {item.monster_icon || '👾'}
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-slate-800">{item.monster_name}</span>
-                      {item.status === 'weekend_boss' && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold badge-silver">
-                          銀
-                        </span>
-                      )}
-                      {item.status === 'mastered' && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold badge-gold">
-                          金
-                        </span>
-                      )}
+            {filteredList.map((item) => {
+              const itemStatus = normalizeStatus(item.status);
+              const gem = getGemInfo(itemStatus);
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => onSelectQuestion(item)}
+                  className="p-4 hover:bg-slate-50 flex items-center justify-between cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl p-2 bg-slate-100 rounded-xl flex items-center justify-center">
+                      {item.monster_icon || gem.icon}
                     </div>
-                    <p className="text-xs text-slate-500 line-clamp-1">{item.problem_plain_text}</p>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-bold text-slate-800">
+                          {item.monster_name || item.category}
+                        </span>
+                        {/* 宝石バッジ */}
+                        <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold ${gem.badgeClass}`}>
+                          <span>{gem.icon}</span>
+                          <span>{gem.name}</span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 line-clamp-1">{item.problem_plain_text}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 text-slate-400">
+                    <span className="text-[11px] font-mono">
+                      {item.next_review_date ? `${item.next_review_date} 復習` : '制覇完了'}
+                    </span>
+                    <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
-
-                <div className="flex items-center space-x-2 text-slate-400">
-                  <span className="text-[11px] font-mono">{item.next_review_date || '完了'}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
