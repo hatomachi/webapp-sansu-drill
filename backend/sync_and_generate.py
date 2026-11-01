@@ -14,7 +14,7 @@ import subprocess
 import time
 import re
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ロガー設定
@@ -219,7 +219,8 @@ def process_queue() -> int:
 
             item["status"] = "stage1"  # ステージ1（初回確認待ち）に昇格
             item["needs_regeneration"] = False
-            item["updated_at"] = datetime.utcnow().isoformat() + "Z"
+            item["updated_at"] = datetime.now(timezone.utc).isoformat()
+            item.pop("raw_image_base64", None)  # 1MB上限・肥大化対策のためBase64は除外してrawファイルのみ参照
 
             logger.info(f"Generated successfully: {item['monster_name']} ({item['category']})")
 

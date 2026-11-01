@@ -1,6 +1,7 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Loader2 } from 'lucide-react';
 import { QuestionItem } from '../types';
+import { StorageService } from '../services/storage';
 
 interface OriginalImageModalProps {
   question: QuestionItem | null;
@@ -8,9 +9,33 @@ interface OriginalImageModalProps {
 }
 
 export const OriginalImageModal: React.FC<OriginalImageModalProps> = ({ question, onClose }) => {
-  if (!question) return null;
+  const [imageSrc, setImageSrc] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const imageSrc = question.raw_image_base64 || question.raw_image_path;
+  useEffect(() => {
+    if (!question) {
+      setImageSrc('');
+      return;
+    }
+
+    if (question.raw_image_base64) {
+      setImageSrc(question.raw_image_base64);
+      return;
+    }
+
+    if (question.raw_image_path) {
+      setIsLoading(true);
+      StorageService.getRawImageUrl(question.raw_image_path)
+        .then((url) => {
+          setImageSrc(url);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [question]);
+
+  if (!question) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -34,7 +59,12 @@ export const OriginalImageModal: React.FC<OriginalImageModalProps> = ({ question
         </div>
 
         <div className="p-4 overflow-y-auto flex-1 flex items-center justify-center bg-slate-100 min-h-[300px]">
-          {imageSrc ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center space-y-2 text-slate-500">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+              <p className="text-xs">写真を読み込み中...</p>
+            </div>
+          ) : imageSrc ? (
             <img
               src={imageSrc}
               alt="元の問題写真"

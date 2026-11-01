@@ -240,10 +240,24 @@ export class StorageService {
       }
 
       const fileData = await res.json();
-      const content = decodeURIComponent(
-        escape(atob(fileData.content.replace(/\s/g, '')))
-      );
-      const remoteQuestions: QuestionItem[] = JSON.parse(content);
+      let jsonStr = '';
+      if (fileData.content) {
+        jsonStr = decodeURIComponent(
+          escape(atob(fileData.content.replace(/\s/g, '')))
+        );
+      } else if (fileData.download_url) {
+        // 1MB超の制限対策フォールバック
+        const rawRes = await fetch(fileData.download_url, {
+          headers: {
+            Authorization: `token ${settings.githubToken}`,
+          },
+        });
+        jsonStr = await rawRes.text();
+      } else {
+        throw new Error('GitHub APIからファイルコンテンツを取得できませんでした');
+      }
+
+      const remoteQuestions: QuestionItem[] = JSON.parse(jsonStr);
       const normalized = remoteQuestions.map((q) => ({
         ...q,
         status: normalizeStatus(q.status),
@@ -334,7 +348,7 @@ export class StorageService {
       next_review_date: now.toISOString().split('T')[0],
       status: 'inbox',
       raw_image_path: filePath,
-      raw_image_base64: `data:image/jpeg;base64,${base64Raw}`,
+      raw_image_base64: '', // questions.jsonの肥大化・1MB制限防止のためBase64は含めずrawファイルのみ保存
       memo: memo || '',
       category: '未解析（AI解析中）',
       monster_name: 'あたらしい問題',
@@ -463,5 +477,37 @@ export class StorageService {
       updated_at: new Date().toISOString(),
       feedback_history: [...question.feedback_history, log],
     };
+  }
+
+  // 元画像のデータURLを取得（Base64またはGitHub API経由）
+  static async getRawImageUrl(filePath: string): Promise<string> {
+    const settings = this.getSettings();
+    if (!settings.githubToken || settings.isDemoMode || !filePath) {
+      return '';
+    }
+    try {
+      const url = `https://api.github.com/repos/${settings.githubOwner}/${settings.githubRepo}/contents/${filePath}?ref=${settings.githubBranch}`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `token ${settings.githubToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+      if (res.ok) {
+        const fileData = await res.json();
+        if (fileData.content) {
+          return `data:image/jpeg;base64,${fileData.content.replace(/\s/g, '')}`;
+        } else if (fileData.download_url) {
+          const imgRes = await fetch(fileData.download_url, {
+            headers: { Authorization: `token ${settings.githubToken}` },
+          });
+          const blob = await imgRes.blob();
+          return URL.createObjectURL(blob);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch raw image', e);
+    }
+    return '';
   }
 }
