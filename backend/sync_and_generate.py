@@ -137,6 +137,46 @@ def build_agy_prompt(item: dict, image_abs_path: Path) -> str:
    - 登場人物やアイテム（どんぐり、折り紙、クッキー、シール、水そう、娘が好きな生き物等）を楽しくアレンジしてください。
 3. 親向け指導ヒント:
    - 親が赤ペンで丸つけする際、どう声をかければ子どもの「あ、そうか！」を引き出せるか（線分図の描き方、指で隠すコツなど）を具体的に1〜2文で記述してください。
+4. 算数リッチ表現（自己完結型HTML / Tailwind CSS / インラインSVG）:
+   iPadの画面（Tailwind CSS導入済み）で美しく分かりやすく表示されるよう、問題形式に応じてHTMLタグ、Tailwindクラス、インラインSVGを自由に活用してください。外部CSSに頼らず、HTML内で自己完結させてください。
+   - 【虫食いマス目（□や穴埋め）】:
+     文字の `[ ]` や `□` ではなく、四角いマス目として表示してください。
+     例: `<span class="inline-flex items-center justify-center w-8 h-8 mx-1 border-2 border-slate-400 rounded-md bg-slate-50 font-bold text-blue-600 align-middle">ア</span>` （ラベル不要なら空文字のspan）
+   - 【筆算（たし算・ひき算・かけ算・虫食い筆算）】:
+     全角スペースで並べるとフォントで位がずれるため、等幅フォント（`font-mono`）とテーブル（`<table>`）で位（百・十・一）をピタリと揃えてください。計算記号（`＋`, `－`, `×`）と計算線（`border-b-2 border-slate-800`）を用いて、ノートに写しやすい縦書き筆算を美しく中央配置してください。
+     例:
+     ```html
+     <div class="my-4 flex justify-center">
+       <table class="font-mono text-2xl border-collapse text-right">
+         <tbody>
+           <tr>
+             <td class="w-8"></td>
+             <td class="w-8">1</td>
+             <td class="w-8"><span class="inline-flex items-center justify-center w-8 h-8 border-2 border-slate-400 rounded bg-slate-50 font-bold text-blue-600">ア</span></td>
+             <td class="w-8">2</td>
+           </tr>
+           <tr class="border-b-2 border-slate-800">
+             <td class="w-8 text-center">－</td>
+             <td class="w-8"></td>
+             <td class="w-8">6</td>
+             <td class="w-8"><span class="inline-flex items-center justify-center w-8 h-8 border-2 border-slate-400 rounded bg-slate-50 font-bold text-blue-600">イ</span></td>
+           </tr>
+           <tr>
+             <td class="w-8"></td>
+             <td class="w-8"></td>
+             <td class="w-8">3</td>
+             <td class="w-8">5</td>
+           </tr>
+         </tbody>
+       </table>
+     </div>
+     ```
+   - 【線分図・数直線・テープ図】:
+     `<svg viewBox="0 0 320 60" class="w-full max-w-sm mx-auto my-3">` などを用いて、長方形や線分、矢印、数値をベクター描画してください。
+   - 【時計の文字盤】:
+     `<svg viewBox="0 0 100 100" class="w-28 h-28 mx-auto my-2">` などを用いて円、目盛り、長針・短針をインラインSVGで描画してください。
+   - 【表・グラフ】:
+     標準的な `<table>` タグに Tailwind クラス（`border border-slate-300`, `bg-slate-50` 等）をつけて描画してください。
 
 【出力フォーマット】
 以下のキーを持つ純粋なJSONオブジェクトのみを出力してください（解説文やMarkdown装飾は含めず、JSONテキストのみを出力してください）:
