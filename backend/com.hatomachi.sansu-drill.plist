@@ -6,8 +6,8 @@
     <string>com.hatomachi.sansu-drill</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/python3</string>
-        <string>/Users/s-ikari/work/webapp-sansu-drill/backend/sync_and_generate.py</string>
+        <string>/bin/bash</string>
+        <string>/Users/s-ikari/work/webapp-sansu-drill/backend/crawler-daemon.sh</string>
     </array>
     <key>WorkingDirectory</key>
     <string>/Users/s-ikari/work/webapp-sansu-drill</string>
@@ -22,7 +22,7 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+        <string>/Users/s-ikari/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     </dict>
 </dict>
 </plist>

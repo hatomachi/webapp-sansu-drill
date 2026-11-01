@@ -1,31 +1,26 @@
-# 💻 Sansu Drill - Mac常駐スクリプト
+# 💻 Sansu Drill - Mac常駐 agy クローラー
 
 ## 概要
-iPad/iPhoneのPWAからGitHubへアップロードされた新着画像（`data/raw/`）や親のツッコミ（再生成要求）を検知し、
-Gemini API（`gemini-2.5-flash`）を使って小2算数に最適化された類題・解答・親向け指導ヒントを自動生成して `data/questions.json` を更新します。
+`voice-reflection-agent` と同一の自律アーキテクチャを採用：
+- iPad/iPhone の PWA から GitHub へアップロードされた新着画像（`data/raw/`）や親のツッコミ（再生成要求）を Outbound（`git pull`）で検知
+- Mac ローカルの **`agy` CLI (`/Users/s-ikari/.local/bin/agy`)** を直接実行
+- 小2算数専用プロンプトにより、ルビ付き類題・解答・親向け指導ヒントをJSON生成
+- `data/questions.json` を更新して GitHub へ自動コミット＆プッシュ（PWAと完全同期）
+
+※ 外部APIキーの管理や追加ライブラリのインストールは一切不要（Python標準ライブラリ＋agy CLIで完結）。
 
 ---
 
-## 🚀 セットアップ ＆ 手動実行
+## 🚀 実行方法
 
-### 1. 依存ライブラリのインストール
+### 1. 単発テスト実行（1サイクル回して終了）
 ```bash
-pip install -r backend/requirements.txt
+./backend/crawler-daemon.sh --once
 ```
 
-### 2. 環境変数の設定
+### 2. 手動での常駐実行（60秒間隔でポーリング監視）
 ```bash
-export GEMINI_API_KEY="your-gemini-api-key"
-```
-
-### 3. 単発テスト実行（1回だけチェックして終了）
-```bash
-python3 backend/sync_and_generate.py --once
-```
-
-### 4. 常駐実行（60秒おきに git pull & 監視）
-```bash
-python3 backend/sync_and_generate.py
+./backend/crawler-daemon.sh
 ```
 
 ---
@@ -33,11 +28,14 @@ python3 backend/sync_and_generate.py
 ## ⚙️ launchd による自動常駐（Mac起動時に自動実行）
 
 ```bash
-# plist を LaunchAgents にコピー
+# plist を LaunchAgents に配置
 cp backend/com.hatomachi.sansu-drill.plist ~/Library/LaunchAgents/
 
-# サービスを登録・起動
+# サービスを起動
 launchctl load ~/Library/LaunchAgents/com.hatomachi.sansu-drill.plist
+
+# 状態確認
+launchctl list | grep sansu-drill
 
 # 停止したい場合
 launchctl unload ~/Library/LaunchAgents/com.hatomachi.sansu-drill.plist
