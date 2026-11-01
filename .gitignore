@@ -8,6 +8,8 @@ pnpm-debug.log*
 lerna-debug.log*
 daemon.stdout.log
 daemon.stderr.log
+__pycache__/
+*.pyc
 
 node_modules
 dist

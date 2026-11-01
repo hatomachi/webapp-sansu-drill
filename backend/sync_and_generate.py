@@ -63,21 +63,35 @@ def run_cmd(cmd: str, cwd: Path = FAMILY_VAULT_DIR) -> str:
     )
     return res.stdout.strip()
 
-def git_pull():
+def git_pull() -> bool:
     logger.info(f"Executing git pull in {FAMILY_VAULT_DIR}...")
     try:
         run_cmd("git pull --rebase origin main", cwd=FAMILY_VAULT_DIR)
+        return True
     except subprocess.CalledProcessError as e:
         logger.warning(f"git pull warning/error: {e.stderr.strip()}")
+        return False
 
-def git_commit_and_push(question_id: str, monster_name: str):
+def git_commit_and_push(question_id: str, monster_name: str, max_retries: int = 3):
     logger.info(f"Committing and pushing updates to family-vault for {question_id}...")
     rel_path = "30_Kids/SansuDrill/questions.json"
     run_cmd(f"git add {rel_path}", cwd=FAMILY_VAULT_DIR)
     commit_msg = f"feat(kids): update SansuDrill problem {question_id} ({monster_name}) via agy"
     run_cmd(f'git commit -m "{commit_msg}"', cwd=FAMILY_VAULT_DIR)
-    run_cmd("git push origin main", cwd=FAMILY_VAULT_DIR)
-    logger.info("Successfully pushed updates to family-vault.")
+
+    for attempt in range(max_retries):
+        try:
+            run_cmd("git push origin main", cwd=FAMILY_VAULT_DIR)
+            logger.info("Successfully pushed updates to family-vault.")
+            return
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"git push failed (attempt {attempt + 1}/{max_retries}): {e.stderr.strip()}")
+            if attempt < max_retries - 1:
+                logger.info("Re-pulling with rebase before retrying push...")
+                run_cmd("git pull --rebase origin main", cwd=FAMILY_VAULT_DIR)
+                time.sleep(2)
+            else:
+                raise
 
 def load_child_context() -> str:
     if CHILD_PROFILE_FILE.exists():
@@ -173,66 +187,83 @@ def run_agy_generate(prompt: str, timeout_sec: int = 300) -> dict:
     return json.loads(cleaned)
 
 def process_queue() -> int:
-    if not QUESTIONS_FILE.exists():
-        logger.warning(f"{QUESTIONS_FILE} does not exist.")
-        return 0
-
-    with open(QUESTIONS_FILE, "r", encoding="utf-8") as f:
-        questions = json.load(f)
-
     processed_count = 0
 
-    for item in questions:
-        needs_work = False
-        if item.get("status") == "inbox":
-            needs_work = True
-        elif item.get("needs_regeneration"):
-            needs_work = True
+    while True:
+        if not QUESTIONS_FILE.exists():
+            logger.warning(f"{QUESTIONS_FILE} does not exist.")
+            break
 
-        if not needs_work:
-            continue
+        with open(QUESTIONS_FILE, "r", encoding="utf-8") as f:
+            questions = json.load(f)
 
-        q_id = item.get("id")
-        logger.info(f"Target detected: {q_id} (status: {item.get('status')}, needs_regeneration: {item.get('needs_regeneration')})")
+        target_item = None
+        for item in questions:
+            if item.get("status") == "inbox" or item.get("needs_regeneration"):
+                target_item = item
+                break
 
-        raw_rel_path = item.get("raw_image_path", "")
-        # 相対パス（例: 30_Kids/SansuDrill/raw/xxx.jpg または raw/xxx.jpg）
+        if not target_item:
+            # 未処理アイテムがなくなったためループ終了
+            break
+
+        q_id = target_item.get("id")
+        logger.info(f"Target detected: {q_id} (status: {target_item.get('status')}, needs_regeneration: {target_item.get('needs_regeneration')})")
+
+        raw_rel_path = target_item.get("raw_image_path", "")
         if raw_rel_path.startswith("30_Kids/SansuDrill/"):
             img_abs_path = FAMILY_VAULT_DIR / raw_rel_path
         else:
             img_abs_path = DATA_DIR / raw_rel_path
 
         try:
-            prompt = build_agy_prompt(item, img_abs_path)
+            prompt = build_agy_prompt(target_item, img_abs_path)
             ai_data = run_agy_generate(prompt)
 
-            # 結果を反映
-            item["category"] = ai_data.get("category", item.get("category"))
-            item["monster_name"] = ai_data.get("monster_name", item.get("monster_name"))
-            item["monster_icon"] = ai_data.get("monster_icon", item.get("monster_icon", "👾"))
-            item["problem_text"] = ai_data.get("problem_text", item.get("problem_text"))
-            item["problem_plain_text"] = ai_data.get("problem_plain_text", item.get("problem_plain_text"))
-            item["formula"] = ai_data.get("formula", "")
-            item["answer"] = ai_data.get("answer", "")
-            item["explanation"] = ai_data.get("explanation", "")
-            item["parent_hint"] = ai_data.get("parent_hint", "")
+            # 【重要】AI生成完了後、推論中（約40秒間）にリモートに届いた新着問題・画像を取り込む
+            git_pull()
 
-            item["status"] = "stage1"  # ステージ1（初回確認待ち）に昇格
-            item["needs_regeneration"] = False
-            item["updated_at"] = datetime.now(timezone.utc).isoformat()
-            item.pop("raw_image_base64", None)  # 1MB上限・肥大化対策のためBase64は除外してrawファイルのみ参照
+            # 最新の questions.json を再読み込みしてピンポイント更新（他の新着問題を消去しないため）
+            with open(QUESTIONS_FILE, "r", encoding="utf-8") as f:
+                latest_questions = json.load(f)
 
-            logger.info(f"Generated successfully: {item['monster_name']} ({item['category']})")
+            found = False
+            for item in latest_questions:
+                if item.get("id") == q_id:
+                    item["category"] = ai_data.get("category", item.get("category"))
+                    item["monster_name"] = ai_data.get("monster_name", item.get("monster_name"))
+                    item["monster_icon"] = ai_data.get("monster_icon", item.get("monster_icon", "👾"))
+                    item["problem_text"] = ai_data.get("problem_text", item.get("problem_text"))
+                    item["problem_plain_text"] = ai_data.get("problem_plain_text", item.get("problem_plain_text"))
+                    item["formula"] = ai_data.get("formula", "")
+                    item["answer"] = ai_data.get("answer", "")
+                    item["explanation"] = ai_data.get("explanation", "")
+                    item["parent_hint"] = ai_data.get("parent_hint", "")
+
+                    item["status"] = "stage1"  # ステージ1（初回確認待ち）に昇格
+                    item["needs_regeneration"] = False
+                    item["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    item.pop("raw_image_base64", None)
+                    found = True
+                    break
+
+            if not found:
+                logger.warning(f"Target item {q_id} not found in latest questions.json after pull. Skipping.")
+                break
+
+            logger.info(f"Generated successfully: {ai_data.get('monster_name')} ({ai_data.get('category')})")
 
             # questions.json 保存
             with open(QUESTIONS_FILE, "w", encoding="utf-8") as f:
-                json.dump(questions, f, ensure_ascii=False, indent=2)
+                json.dump(latest_questions, f, ensure_ascii=False, indent=2)
 
-            git_commit_and_push(q_id, item["monster_name"])
+            git_commit_and_push(q_id, ai_data.get("monster_name", "あたらしい問題"))
             processed_count += 1
 
         except Exception as e:
             logger.error(f"Failed to process {q_id}: {e}", exc_info=True)
+            # エラー発生時は無限ループを避けるため一度中断し、次回の定期ポーリングに委ねる
+            break
 
     return processed_count
 
