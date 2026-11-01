@@ -1,6 +1,6 @@
 {
   "name": "webapp-sansu-drill",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "private": true,
   "description": "娘（小2）の算数学習用・間違えた文章題の類題自動生成＆ストックPWA",
   "type": "module",

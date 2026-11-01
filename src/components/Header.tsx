@@ -1,5 +1,6 @@
 import React from 'react';
 import { Camera, Settings, RefreshCw, UserCheck, Sparkles, Gem } from 'lucide-react';
+import { APP_VERSION } from '../version';
 
 interface HeaderProps {
   isParentMode: boolean;
@@ -37,6 +38,18 @@ export const Header: React.FC<HeaderProps> = ({
               <h1 className="text-lg font-bold text-slate-800 leading-tight">
                 Sansu Drill
               </h1>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`現在バージョン: ${APP_VERSION}\n最新版に更新するため再読み込みしますか？`)) {
+                    window.location.reload();
+                  }
+                }}
+                className="text-[10px] font-mono font-bold px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded border border-slate-300 transition-colors"
+                title="タップして最新版へ再読み込み"
+              >
+                {APP_VERSION}
+              </button>
               {dueCount > 0 && (
                 <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-600 text-white animate-pulse">
                   本日 {dueCount} 問

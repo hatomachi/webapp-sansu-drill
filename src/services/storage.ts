@@ -31,6 +31,48 @@ export function getNextWedOrSat(from: Date = new Date()): Date {
   return new Date(from.getTime() + daysToAdd * 24 * 3600 * 1000);
 }
 
+// 問題データの互換性正規化（古いPWAのキャッシュでも空白にならないよう相互補完）
+export function normalizeQuestionItem(q: any): QuestionItem {
+  const status = normalizeStatus(q.status);
+  const variants = q.variants;
+
+  let problem_text = q.problem_text;
+  let problem_plain_text = q.problem_plain_text;
+  let formula = q.formula;
+  let answer = q.answer;
+  let explanation = q.explanation;
+  let parent_hint = q.parent_hint;
+
+  if (variants && variants.length > 0) {
+    const v0 = variants[0];
+    if (!problem_text) problem_text = v0.problem_text;
+    if (!problem_plain_text) problem_plain_text = v0.problem_plain_text;
+    if (!formula) formula = v0.formula;
+    if (!answer) answer = v0.answer;
+    if (!explanation) explanation = v0.explanation;
+    if (!parent_hint) parent_hint = v0.parent_hint;
+  }
+
+  return {
+    ...q,
+    status,
+    variants: variants && variants.length > 0 ? variants : (problem_text ? [{
+      problem_text,
+      problem_plain_text: problem_plain_text || '',
+      formula: formula || '',
+      answer: answer || '',
+      explanation: explanation || '',
+      parent_hint: parent_hint || '',
+    }] : []),
+    problem_text,
+    problem_plain_text,
+    formula,
+    answer,
+    explanation,
+    parent_hint,
+  };
+}
+
 export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
   {
     id: 'q_demo_001',
@@ -218,11 +260,8 @@ export class StorageService {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          // 既存ステータスを正規化
-          return parsed.map((q) => ({
-            ...q,
-            status: normalizeStatus(q.status),
-          }));
+          // 既存ステータスおよび問題データを正規化・救済
+          return parsed.map((q) => normalizeQuestionItem(q));
         }
       }
     } catch (e) {
@@ -318,10 +357,7 @@ export class StorageService {
       }
 
       const remoteQuestions: QuestionItem[] = JSON.parse(jsonStr);
-      const normalized = remoteQuestions.map((q) => ({
-        ...q,
-        status: normalizeStatus(q.status),
-      }));
+      const normalized = remoteQuestions.map((q) => normalizeQuestionItem(q));
 
       // ローカル保存
       this.saveLocalQuestions(normalized);

@@ -92,14 +92,14 @@ export function getCurrentVariant(question: QuestionItem): ProblemVariant {
     return variants[0];
   }
 
-  // 万が一 variants が空の場合のフォールバック
+  // 万が一 variants が空の場合のフォールバック（トップレベルから救済）
   return {
-    problem_text: 'もんだいを よみこみちゅう...',
-    problem_plain_text: 'もんだいを よみこみちゅう...',
-    formula: '',
-    answer: '',
-    explanation: '',
-    parent_hint: '',
+    problem_text: question.problem_text || 'もんだいを よみこみちゅう...',
+    problem_plain_text: question.problem_plain_text || 'もんだいを よみこみちゅう...',
+    formula: question.formula || '',
+    answer: question.answer || '',
+    explanation: question.explanation || '',
+    parent_hint: question.parent_hint || '',
   };
 }
 

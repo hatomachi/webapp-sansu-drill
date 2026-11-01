@@ -50,6 +50,14 @@ export interface QuestionItem {
   // 3段階類題ストック（問1: オパール用 / 問2: サファイア用 / 問3: ダイヤ用）
   variants?: ProblemVariant[];
 
+  // 旧バージョンPWA・フォールバック用フィールド
+  problem_text?: string;
+  problem_plain_text?: string;
+  formula?: string;
+  answer?: string;
+  explanation?: string;
+  parent_hint?: string;
+
   // 親ツッコミ・再生成
   needs_regeneration?: boolean;    // 再生成待ちフラグ
   feedback_history: FeedbackLog[]; // 親のツッコミ履歴
