@@ -11,27 +11,40 @@ interface OriginalImageModalProps {
 export const OriginalImageModal: React.FC<OriginalImageModalProps> = ({ question, onClose }) => {
   const [imageSrc, setImageSrc] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string>('');
 
   useEffect(() => {
     if (!question) {
       setImageSrc('');
+      setErrorMsg('');
       return;
     }
 
     if (question.raw_image_base64) {
       setImageSrc(question.raw_image_base64);
+      setErrorMsg('');
       return;
     }
 
     if (question.raw_image_path) {
       setIsLoading(true);
+      setErrorMsg('');
       StorageService.getRawImageUrl(question.raw_image_path)
         .then((url) => {
-          setImageSrc(url);
+          if (url) {
+            setImageSrc(url);
+          } else {
+            setErrorMsg('写真の読み込みに失敗しました。GitHubの設定または通信状況を確認してください。');
+          }
+        })
+        .catch((e: any) => {
+          setErrorMsg(e.message || '写真の読み込みに失敗しました');
         })
         .finally(() => {
           setIsLoading(false);
         });
+    } else {
+      setErrorMsg('写真パスが登録されていません');
     }
   }, [question]);
 
@@ -62,7 +75,7 @@ export const OriginalImageModal: React.FC<OriginalImageModalProps> = ({ question
           {isLoading ? (
             <div className="flex flex-col items-center space-y-2 text-slate-500">
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-              <p className="text-xs">写真を読み込み中...</p>
+              <p className="text-xs">写真をGitHubから読み込み中...</p>
             </div>
           ) : imageSrc ? (
             <img
@@ -72,8 +85,8 @@ export const OriginalImageModal: React.FC<OriginalImageModalProps> = ({ question
             />
           ) : (
             <div className="text-center p-8 text-slate-400">
-              <p className="text-sm">画像データが見つかりませんでした</p>
-              <p className="text-xs mt-1">パス: {question.raw_image_path || '未登録'}</p>
+              <p className="text-sm">{errorMsg || '画像データが見つかりませんでした'}</p>
+              <p className="text-xs mt-1 text-slate-400">パス: {question.raw_image_path || '未登録'}</p>
             </div>
           )}
         </div>

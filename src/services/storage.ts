@@ -479,30 +479,62 @@ export class StorageService {
     };
   }
 
-  // 元画像のデータURLを取得（Base64またはGitHub API経由）
+  private static imageCache = new Map<string, string>();
+
+  // 元画像のデータURLを取得（キャッシュ ＆ rawバイナリ優先 ＆ Base64フォールバック）
   static async getRawImageUrl(filePath: string): Promise<string> {
+    if (!filePath) return '';
+    if (this.imageCache.has(filePath)) {
+      return this.imageCache.get(filePath)!;
+    }
+
     const settings = this.getSettings();
-    if (!settings.githubToken || settings.isDemoMode || !filePath) {
+    if (!settings.githubToken || settings.isDemoMode) {
       return '';
     }
+
     try {
       const url = `https://api.github.com/repos/${settings.githubOwner}/${settings.githubRepo}/contents/${filePath}?ref=${settings.githubBranch}`;
+
+      // 1. まず生バイナリ (raw) を直接取得（高速・CORS確実・Base64オーバーヘッドゼロ）
+      const rawRes = await fetch(url, {
+        headers: {
+          Authorization: `token ${settings.githubToken}`,
+          Accept: 'application/vnd.github.v3.raw',
+        },
+      });
+
+      if (rawRes.ok) {
+        const blob = await rawRes.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        this.imageCache.set(filePath, objectUrl);
+        return objectUrl;
+      }
+
+      // 2. フォールバック: JSON API (Base64)
       const res = await fetch(url, {
         headers: {
           Authorization: `token ${settings.githubToken}`,
           Accept: 'application/vnd.github.v3+json',
         },
       });
+
       if (res.ok) {
         const fileData = await res.json();
         if (fileData.content) {
-          return `data:image/jpeg;base64,${fileData.content.replace(/\s/g, '')}`;
+          const b64Url = `data:image/jpeg;base64,${fileData.content.replace(/\s/g, '')}`;
+          this.imageCache.set(filePath, b64Url);
+          return b64Url;
         } else if (fileData.download_url) {
           const imgRes = await fetch(fileData.download_url, {
             headers: { Authorization: `token ${settings.githubToken}` },
           });
-          const blob = await imgRes.blob();
-          return URL.createObjectURL(blob);
+          if (imgRes.ok) {
+            const blob = await imgRes.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            this.imageCache.set(filePath, objectUrl);
+            return objectUrl;
+          }
         }
       }
     } catch (e) {
