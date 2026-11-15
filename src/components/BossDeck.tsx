@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Sparkles, ChevronRight, ChevronLeft, Printer } from 'lucide-react';
 import { QuestionItem, StageConfig } from '../types';
 import { QuestionCard } from './QuestionCard';
 import { normalizeStatus } from '../services/storage';
@@ -12,6 +12,7 @@ interface BossDeckProps {
   onOpenFeedback: (question: QuestionItem) => void;
   onOpenOriginalImage: (question: QuestionItem) => void;
   onOpenCapture: () => void;
+  onOpenPrint?: () => void;
   onDelete?: (questionId: string) => void;
 }
 
@@ -23,6 +24,7 @@ export const BossDeck: React.FC<BossDeckProps> = ({
   onOpenFeedback,
   onOpenOriginalImage,
   onOpenCapture,
+  onOpenPrint,
   onDelete,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -64,6 +66,15 @@ export const BossDeck: React.FC<BossDeckProps> = ({
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          {onOpenPrint && questions.length > 0 && (
+            <button
+              onClick={onOpenPrint}
+              className="w-full sm:w-auto px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1.5"
+            >
+              <Printer className="w-4 h-4 text-blue-600" />
+              <span>A4プリントを作成・印刷</span>
+            </button>
+          )}
           <button
             onClick={onOpenCapture}
             className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95"
@@ -77,6 +88,32 @@ export const BossDeck: React.FC<BossDeckProps> = ({
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
+      {/* A4プリントクイックバナー（親がワンタップで紙出力できる） */}
+      {onOpenPrint && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-3.5 flex items-center justify-between shadow-sm">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-200">
+              <Printer className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-800">
+                A4ドリルプリントを印刷
+              </p>
+              <p className="text-[11px] text-slate-500">
+                本日の復習問題（3問）を自宅プリンターで1枚印刷
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenPrint}
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center space-x-1"
+          >
+            <span>印刷する</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* 進行バー */}
       <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
         <div className="flex items-center space-x-2">

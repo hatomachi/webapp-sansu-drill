@@ -6,6 +6,7 @@ import { CaptureModal } from './components/CaptureModal';
 import { FeedbackModal } from './components/FeedbackModal';
 import { OriginalImageModal } from './components/OriginalImageModal';
 import { SettingsModal } from './components/SettingsModal';
+import { PrintModal } from './components/PrintModal';
 import { QuestionCard } from './components/QuestionCard';
 import { StorageService } from './services/storage';
 import { QuestionItem, UserSettings } from './types';
@@ -19,6 +20,7 @@ export const App: React.FC = () => {
 
   // モーダル管理
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
+  const [isPrintOpen, setIsPrintOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [feedbackQuestion, setFeedbackQuestion] = useState<QuestionItem | null>(null);
   const [originalImageQuestion, setOriginalImageQuestion] = useState<QuestionItem | null>(null);
@@ -112,6 +114,7 @@ export const App: React.FC = () => {
         isParentMode={isParentMode}
         onToggleParentMode={() => setIsParentMode(!isParentMode)}
         onOpenCapture={() => setIsCaptureOpen(true)}
+        onOpenPrint={() => setIsPrintOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onSync={handleSync}
         isSyncing={isSyncing}
@@ -124,7 +127,7 @@ export const App: React.FC = () => {
       />
 
       {/* メインコンテンツ */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 pb-20">
+      <main className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 pb-20 no-print">
         {detailQuestion ? (
           <div className="space-y-4 max-w-2xl mx-auto">
             <button
@@ -152,6 +155,7 @@ export const App: React.FC = () => {
             onOpenFeedback={(q) => setFeedbackQuestion(q)}
             onOpenOriginalImage={(q) => setOriginalImageQuestion(q)}
             onOpenCapture={() => setIsCaptureOpen(true)}
+            onOpenPrint={() => setIsPrintOpen(true)}
             onDelete={handleDeleteQuestion}
           />
         ) : (
@@ -164,6 +168,14 @@ export const App: React.FC = () => {
       </main>
 
       {/* モーダル群 */}
+      <PrintModal
+        isOpen={isPrintOpen}
+        onClose={() => setIsPrintOpen(false)}
+        questions={questions}
+        stageConfig={settings.stageConfig}
+        onAnswer={handleAnswer}
+      />
+
       <CaptureModal
         isOpen={isCaptureOpen}
         onClose={() => setIsCaptureOpen(false)}

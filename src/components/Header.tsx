@@ -1,11 +1,12 @@
 import React from 'react';
-import { Camera, Settings, RefreshCw, UserCheck, Sparkles, Gem } from 'lucide-react';
+import { Camera, Settings, RefreshCw, UserCheck, Sparkles, Gem, Printer } from 'lucide-react';
 import { APP_VERSION } from '../version';
 
 interface HeaderProps {
   isParentMode: boolean;
   onToggleParentMode: () => void;
   onOpenCapture: () => void;
+  onOpenPrint: () => void;
   onOpenSettings: () => void;
   onSync: () => void;
   isSyncing: boolean;
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   isParentMode,
   onToggleParentMode,
   onOpenCapture,
+  onOpenPrint,
   onOpenSettings,
   onSync,
   isSyncing,
@@ -26,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   dueCount,
 }) => {
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* 左: ロゴとビュー切り替え */}
         <div className="flex items-center space-x-3">
@@ -88,6 +90,16 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* 右: 操作ボタン群 */}
         <div className="flex items-center space-x-2">
+          {/* プリント印刷ボタン（A4ワンタップ） */}
+          <button
+            onClick={onOpenPrint}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-300 hover:border-blue-300 text-xs font-bold transition-all active:scale-95"
+            title="A4プリントを作成・印刷する"
+          >
+            <Printer className="w-4 h-4 text-blue-600" />
+            <span className="hidden md:inline">A4プリント</span>
+          </button>
+
           {/* 親モード切替スイッチ */}
           <button
             onClick={onToggleParentMode}
