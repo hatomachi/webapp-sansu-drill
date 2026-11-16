@@ -47,11 +47,27 @@ export function useA4PdfExport({
   const pdfCaptureRef = useRef<HTMLDivElement | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [preparedPdfFile, setPreparedPdfFile] = useState<File | null>(null);
+  const [preparedPdfUrl, setPreparedPdfUrl] = useState<string | null>(null);
   const [showSharePrompt, setShowSharePrompt] = useState(false);
-  const [pdfStatusMessage, setPdfStatusMessage] =
-    useState<PdfStatusMessage | null>(null);
+  const [pdfStatusMessage, setPdfStatusMessage] = useState<{
+    type: 'info' | 'error';
+    text: string;
+  } | null>(null);
 
   const selectedKey = selectedQuestions.map((q) => q.id).join(',');
+
+  // 生成済みPDFのBlob URLライフサイクル管理
+  useEffect(() => {
+    if (!preparedPdfFile) {
+      setPreparedPdfUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(preparedPdfFile);
+    setPreparedPdfUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [preparedPdfFile]);
 
   // 選択内容や印刷オプションが変わったらキャッシュ破棄
   useEffect(() => {
@@ -85,9 +101,8 @@ export function useA4PdfExport({
     setPdfStatusMessage(null);
 
     try {
-      const { generateA4PdfFile, deliverPdfFile } = await import(
-        '../utils/pdfGenerator'
-      );
+      const { generateA4PdfFile, deliverPdfFile, isTouchMobileDevice } =
+        await import('../utils/pdfGenerator');
 
       let targetFile = preparedPdfFile;
 
@@ -118,20 +133,25 @@ export function useA4PdfExport({
       onPrintedBatch(selectedQuestions.map((q) => q.id));
 
       const result = await deliverPdfFile(targetFile);
-      if (result === 'shared') {
+      if (result === 'downloaded') {
+        setPdfStatusMessage({
+          type: 'info',
+          text: 'A4 PDFを作成しました（保存後に「Safariで開く」からCanon PRINTへ送れます）',
+        });
+        // モバイルでは非同期後の自動ダウンロードがSafariにブロックされることがあるため、
+        // 生の<a>タグで100%開ける確認シートも同時に提示する
+        if (isTouchMobileDevice()) {
+          setShowSharePrompt(true);
+        }
+      } else if (result === 'shared') {
         setPdfStatusMessage({
           type: 'info',
           text: '共有メニューから Canon PRINT 等へ送れます（「丸つけ」タブにセット済み）',
         });
-      } else if (result === 'downloaded') {
-        setPdfStatusMessage({
-          type: 'info',
-          text: 'A4 PDFを保存しました（「丸つけ」タブにセット済み）',
-        });
       } else if (result === 'cancelled') {
         setPdfStatusMessage({
           type: 'info',
-          text: 'PDF作成済みです（Canon PRINTが出ない場合は「他の方法で開く」や「保存」からファイル経由で印刷できます）',
+          text: 'PDF作成済みです（「保存」や「他の方法で開く」から印刷できます）',
         });
       } else if (result === 'activation-expired') {
         setShowSharePrompt(true);
@@ -213,6 +233,7 @@ export function useA4PdfExport({
     pdfCaptureRef,
     isGeneratingPdf,
     preparedPdfFile,
+    preparedPdfUrl,
     showSharePrompt,
     setShowSharePrompt,
     pdfStatusMessage,
@@ -234,6 +255,7 @@ interface PdfExportLayerProps {
   pdfCaptureRef: React.RefObject<HTMLDivElement>;
   isGeneratingPdf: boolean;
   preparedPdfFile: File | null;
+  preparedPdfUrl?: string | null;
   showSharePrompt: boolean;
   onCloseSharePrompt: () => void;
   onTriggerShare: () => void;
@@ -251,6 +273,7 @@ export const PdfExportLayer: React.FC<PdfExportLayerProps> = ({
   pdfCaptureRef,
   isGeneratingPdf,
   preparedPdfFile,
+  preparedPdfUrl,
   showSharePrompt,
   onCloseSharePrompt,
   onTriggerShare,
@@ -365,7 +388,7 @@ export const PdfExportLayer: React.FC<PdfExportLayerProps> = ({
         </>
       )}
 
-      {/* iOS Safari等で非同期後の共有シート自動起動が制限された場合のワンタップ確認パネル */}
+      {/* A4 PDF作成完了後の保存・Safari印刷用ワンタップシート */}
       {showSharePrompt && preparedPdfFile && (
         <div className="fixed inset-0 z-[65] bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 no-print">
           <div className="bg-white rounded-t-3xl sm:rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 pb-safe">
@@ -377,19 +400,30 @@ export const PdfExportLayer: React.FC<PdfExportLayerProps> = ({
                 A4 PDFの準備ができました
               </h3>
               <p className="text-xs text-slate-500">
-                共有メニューから「Canon PRINT」を選んで印刷してください。
+                「保存・Safariで開く」を押して、開いた画面の共有ボタンから「Canon PRINT」で印刷してください。
               </p>
             </div>
 
             <div className="space-y-2">
-              <button
-                type="button"
-                onClick={onTriggerShare}
-                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-blue-200 active:scale-95 transition-all"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Canon PRINT へ送る / 共有</span>
-              </button>
+              {preparedPdfUrl ? (
+                <a
+                  href={preparedPdfUrl}
+                  download={preparedPdfFile.name}
+                  className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-blue-200 active:scale-95 transition-all"
+                >
+                  <FileDown className="w-4 h-4" />
+                  <span>PDFを保存・Safariで開く</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onDownload}
+                  className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-blue-200 active:scale-95 transition-all"
+                >
+                  <FileDown className="w-4 h-4" />
+                  <span>PDFを保存・Safariで開く</span>
+                </button>
+              )}
 
               {!isStandalone && onOpenInBrowser && (
                 <button
@@ -398,17 +432,17 @@ export const PdfExportLayer: React.FC<PdfExportLayerProps> = ({
                   className="w-full py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  <span>Safari の PDF画面で開く（共有用）</span>
+                  <span>別タブでPDF表示（通常Safari）</span>
                 </button>
               )}
 
               <button
                 type="button"
-                onClick={onDownload}
+                onClick={onTriggerShare}
                 className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
               >
-                <FileDown className="w-4 h-4" />
-                <span>端末・ファイルに保存</span>
+                <Share2 className="w-4 h-4" />
+                <span>OSの共有メニューを開く</span>
               </button>
 
               {onGoToGrade && (
@@ -420,13 +454,9 @@ export const PdfExportLayer: React.FC<PdfExportLayerProps> = ({
                   }}
                   className="w-full py-2.5 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-colors"
                 >
-                  あとで丸つけする（「丸つけ」タブへ）
+                  印刷後に丸つけする（「丸つけ」タブへ）
                 </button>
               )}
-
-              <p className="text-[11px] text-slate-400 text-center leading-relaxed pt-1">
-                ※ 共有メニューに Canon PRINT が出ない場合は「端末・ファイルに保存」後に「ファイル」アプリから共有してください。
-              </p>
 
               <button
                 type="button"

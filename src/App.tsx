@@ -336,6 +336,7 @@ export const App: React.FC = () => {
         pdfCaptureRef={pdfExport.pdfCaptureRef}
         isGeneratingPdf={pdfExport.isGeneratingPdf}
         preparedPdfFile={pdfExport.preparedPdfFile}
+        preparedPdfUrl={pdfExport.preparedPdfUrl}
         showSharePrompt={pdfExport.showSharePrompt}
         onCloseSharePrompt={() => pdfExport.setShowSharePrompt(false)}
         onTriggerShare={pdfExport.handleTriggerSharePrepared}

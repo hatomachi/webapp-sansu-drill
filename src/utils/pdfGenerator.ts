@@ -109,10 +109,10 @@ export async function generateA4PdfFile(
 }
 
 /**
- * 生成したPDFファイルをローカルにダウンロード保存する
+ * 生成したPDFファイルをローカルにダウンロード保存する（iOSでは保存/Safari PDF表示へ遷移）
  */
-export function downloadPdfFile(file: File): void {
-  const url = URL.createObjectURL(file);
+export function downloadPdfFile(file: File, existingUrl?: string): void {
+  const url = existingUrl || URL.createObjectURL(file);
   const link = document.createElement('a');
   link.href = url;
   link.download = file.name;
@@ -124,8 +124,10 @@ export function downloadPdfFile(file: File): void {
     if (link.parentNode) {
       link.parentNode.removeChild(link);
     }
-    URL.revokeObjectURL(url);
-  }, 5000);
+    if (!existingUrl) {
+      URL.revokeObjectURL(url);
+    }
+  }, 60_000);
 }
 
 /**
@@ -183,20 +185,10 @@ export async function sharePdfFile(
 }
 
 /**
- * 端末に応じた最適な方法でPDFを届ける（スマホは共有シート優先、PCは直接ダウンロード）
+ * 端末に応じた最適な方法でPDFを届ける
+ * （Web Share APIのシートにはCanon PRINTが出ないため、ダウンロード／Safari PDF表示を主導線にする）
  */
 export async function deliverPdfFile(file: File): Promise<PdfDeliveryResult> {
-  if (isTouchMobileDevice()) {
-    try {
-      const shareResult = await sharePdfFile(file);
-      if (shareResult !== 'unsupported') {
-        return shareResult;
-      }
-    } catch (err) {
-      console.warn('Web Share failed, falling back to download:', err);
-    }
-  }
-
   downloadPdfFile(file);
   return 'downloaded';
 }
