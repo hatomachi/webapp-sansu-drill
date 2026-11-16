@@ -272,6 +272,7 @@ export const App: React.FC = () => {
             onDismissStatusMessage={() => pdfExport.setPdfStatusMessage(null)}
             hasPreparedPdf={Boolean(pdfExport.preparedPdfFile)}
             onRedownloadPdf={pdfExport.handleDownloadPrepared}
+            onOpenShareOptions={() => pdfExport.setShowSharePrompt(true)}
           />
         )}
 
@@ -339,6 +340,7 @@ export const App: React.FC = () => {
         onCloseSharePrompt={() => pdfExport.setShowSharePrompt(false)}
         onTriggerShare={pdfExport.handleTriggerSharePrepared}
         onDownload={pdfExport.handleDownloadPrepared}
+        onOpenInBrowser={pdfExport.handleOpenInBrowser}
         onGoToGrade={() => setActiveTab('grade')}
       />
 
@@ -352,8 +354,10 @@ export const App: React.FC = () => {
         includeAnswerSheet={printPrefs.includeAnswerSheet}
         headerTitle={settings.printHeaderTitle}
         isGeneratingPdf={pdfExport.isGeneratingPdf}
+        hasPreparedPdf={Boolean(pdfExport.preparedPdfFile)}
         onExportPdf={pdfExport.handleExportPdf}
         onPrintDirect={pdfExport.handlePrintDirect}
+        onOpenShareOptions={() => pdfExport.setShowSharePrompt(true)}
       />
 
       {/* 問題詳細ボトムシート */}

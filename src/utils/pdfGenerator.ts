@@ -125,7 +125,20 @@ export function downloadPdfFile(file: File): void {
       link.parentNode.removeChild(link);
     }
     URL.revokeObjectURL(url);
-  }, 1500);
+  }, 5000);
+}
+
+/**
+ * 通常のブラウザタブ（SafariのネイティブPDFビューア等）でPDFを開く
+ * ※ スタンドアロンPWAモードではblob URLの別タブ遷移が制限されるため通常ブラウザ向け
+ */
+export function openPdfInNewTab(file: File): boolean {
+  const url = URL.createObjectURL(file);
+  const opened = window.open(url, '_blank', 'noopener,noreferrer');
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 60_000);
+  return Boolean(opened);
 }
 
 /**
@@ -150,9 +163,10 @@ export async function sharePdfFile(
   }
 
   try {
+    // iOS共有シートでPDF単体受け取りアプリ（Canon PRINT等）が候補から除外されないよう、
+    // title/text等のテキスト系フィールドは混ぜず files のみを渡す
     await navigator.share({
       files: [file],
-      title: 'さんすう ふくしゅうプリント',
     });
     return 'shared';
   } catch (err) {

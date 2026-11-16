@@ -20,8 +20,10 @@ interface PrintPreviewModalProps {
   includeAnswerSheet: boolean;
   headerTitle?: string;
   isGeneratingPdf: boolean;
+  hasPreparedPdf?: boolean;
   onExportPdf: () => void;
   onPrintDirect: () => void;
+  onOpenShareOptions?: () => void;
 }
 
 export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
@@ -33,8 +35,10 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   includeAnswerSheet,
   headerTitle,
   isGeneratingPdf,
+  hasPreparedPdf = false,
   onExportPdf,
   onPrintDirect,
+  onOpenShareOptions,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [previewScale, setPreviewScale] = useState(1);
@@ -87,14 +91,25 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-2 -mr-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
-          aria-label="閉じる"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {hasPreparedPdf && onOpenShareOptions && (
+            <button
+              type="button"
+              onClick={onOpenShareOptions}
+              className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+            >
+              保存・他の方法で開く
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 -mr-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
+            aria-label="閉じる"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* プレビュー領域（画面の大半を紙面確認に確保） */}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Loader2, Share2, FileDown } from 'lucide-react';
+import { Loader2, Share2, FileDown, ExternalLink } from 'lucide-react';
 import { QuestionItem, StageConfig } from '../types';
 import {
   A4_PAGE_WIDTH_PX,
@@ -128,6 +128,11 @@ export function useA4PdfExport({
           type: 'info',
           text: 'A4 PDFを保存しました（「丸つけ」タブにセット済み）',
         });
+      } else if (result === 'cancelled') {
+        setPdfStatusMessage({
+          type: 'info',
+          text: 'PDF作成済みです（Canon PRINTが出ない場合は「他の方法で開く」や「保存」からファイル経由で印刷できます）',
+        });
       } else if (result === 'activation-expired') {
         setShowSharePrompt(true);
       }
@@ -179,8 +184,29 @@ export function useA4PdfExport({
     setShowSharePrompt(false);
     setPdfStatusMessage({
       type: 'info',
-      text: 'A4 PDFを端末に保存しました',
+      text: 'A4 PDFを端末に保存しました（「ファイル」アプリから Canon PRINT へ共有できます）',
     });
+  };
+
+  const handleOpenInBrowser = async () => {
+    if (!preparedPdfFile) return;
+    const { openPdfInNewTab, downloadPdfFile } = await import(
+      '../utils/pdfGenerator'
+    );
+    const opened = openPdfInNewTab(preparedPdfFile);
+    setShowSharePrompt(false);
+    if (opened) {
+      setPdfStatusMessage({
+        type: 'info',
+        text: '別タブでPDFを開きました。画面の共有ボタンから Canon PRINT 等へ送れます',
+      });
+    } else {
+      downloadPdfFile(preparedPdfFile);
+      setPdfStatusMessage({
+        type: 'info',
+        text: '別タブを開けなかったため端末に保存しました',
+      });
+    }
   };
 
   return {
@@ -195,6 +221,7 @@ export function useA4PdfExport({
     handleExportPdf,
     handleTriggerSharePrepared,
     handleDownloadPrepared,
+    handleOpenInBrowser,
   };
 }
 
@@ -211,6 +238,7 @@ interface PdfExportLayerProps {
   onCloseSharePrompt: () => void;
   onTriggerShare: () => void;
   onDownload: () => void;
+  onOpenInBrowser?: () => void;
   onGoToGrade?: () => void;
 }
 
@@ -227,9 +255,14 @@ export const PdfExportLayer: React.FC<PdfExportLayerProps> = ({
   onCloseSharePrompt,
   onTriggerShare,
   onDownload,
+  onOpenInBrowser,
   onGoToGrade,
 }) => {
   const todayStr = getJapaneseTodayStr();
+  const isStandalone =
+    typeof window !== 'undefined' &&
+    (window.matchMedia?.('(display-mode: standalone)').matches === true ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true);
   const questionPages = chunkQuestions(selectedQuestions, QUESTIONS_PER_PAGE);
   const answerPages =
     includeAnswerSheet && selectedQuestions.length > 0
@@ -358,6 +391,26 @@ export const PdfExportLayer: React.FC<PdfExportLayerProps> = ({
                 <span>Canon PRINT へ送る / 共有</span>
               </button>
 
+              {!isStandalone && onOpenInBrowser && (
+                <button
+                  type="button"
+                  onClick={onOpenInBrowser}
+                  className="w-full py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Safari の PDF画面で開く（共有用）</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={onDownload}
+                className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <FileDown className="w-4 h-4" />
+                <span>端末・ファイルに保存</span>
+              </button>
+
               {onGoToGrade && (
                 <button
                   type="button"
@@ -371,19 +424,14 @@ export const PdfExportLayer: React.FC<PdfExportLayerProps> = ({
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={onDownload}
-                className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <FileDown className="w-4 h-4" />
-                <span>端末にファイルを保存</span>
-              </button>
+              <p className="text-[11px] text-slate-400 text-center leading-relaxed pt-1">
+                ※ 共有メニューに Canon PRINT が出ない場合は「端末・ファイルに保存」後に「ファイル」アプリから共有してください。
+              </p>
 
               <button
                 type="button"
                 onClick={onCloseSharePrompt}
-                className="w-full py-2 text-xs text-slate-400 hover:text-slate-600 font-medium"
+                className="w-full py-1.5 text-xs text-slate-400 hover:text-slate-600 font-medium"
               >
                 閉じる
               </button>

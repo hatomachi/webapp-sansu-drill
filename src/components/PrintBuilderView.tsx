@@ -41,6 +41,7 @@ interface PrintBuilderViewProps {
   onDismissStatusMessage: () => void;
   hasPreparedPdf: boolean;
   onRedownloadPdf: () => void;
+  onOpenShareOptions?: () => void;
 }
 
 export const PrintBuilderView: React.FC<PrintBuilderViewProps> = ({
@@ -60,6 +61,7 @@ export const PrintBuilderView: React.FC<PrintBuilderViewProps> = ({
   onDismissStatusMessage,
   hasPreparedPdf,
   onRedownloadPdf,
+  onOpenShareOptions,
 }) => {
   const todayStr = getLocalTodayStr();
 
@@ -91,7 +93,16 @@ export const PrintBuilderView: React.FC<PrintBuilderViewProps> = ({
           }`}
         >
           <span>{pdfStatusMessage.text}</span>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
+            {hasPreparedPdf && onOpenShareOptions && (
+              <button
+                type="button"
+                onClick={onOpenShareOptions}
+                className="underline font-bold"
+              >
+                他の方法で開く
+              </button>
+            )}
             {hasPreparedPdf && (
               <button
                 type="button"
