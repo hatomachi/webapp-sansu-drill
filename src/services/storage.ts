@@ -1,7 +1,28 @@
-import { QuestionItem, UserSettings, QuestionStatus, StageConfig } from '../types';
+import {
+  QuestionItem,
+  UserSettings,
+  QuestionStatus,
+  StageConfig,
+  PrintPreferences,
+  PrintSessionState,
+} from '../types';
 
 const STORAGE_KEY_QUESTIONS = 'sansu_drill_questions_v1';
 const STORAGE_KEY_SETTINGS = 'sansu_drill_settings_v1';
+const STORAGE_KEY_PRINT_PREFS = 'sansu_drill_print_prefs_v1';
+const STORAGE_KEY_PRINT_SESSION = 'sansu_drill_print_session_v1';
+
+export const DEFAULT_PRINT_PREFERENCES: PrintPreferences = {
+  showGridDots: true,
+  includeAnswerSheet: false,
+};
+
+function getLocalDateKey(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 export const DEFAULT_STAGE_CONFIG: StageConfig = {
   stage1Label: '毎日',
@@ -81,8 +102,8 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
     next_review_date: new Date().toISOString().split('T')[0],
     status: 'stage2',
     category: 'たし算とひき算（ちがいに目をつける）',
-    monster_name: 'どんぐりのくらべっこ',
-    monster_icon: '🐿️',
+    monster_name: 'ちがいを求めるひき算',
+    monster_icon: '📐',
     variants: [
       {
         problem_text: `<ruby>赤<rt>あか</rt></ruby>いどんぐりが 24<ruby>個<rt>こ</rt></ruby>、<ruby>青<rt>あお</rt></ruby>いどんぐりが 18<ruby>個<rt>こ</rt></ruby> あります。<br/><ruby>赤<rt>あか</rt></ruby>いどんぐりは、<ruby>青<rt>あお</rt></ruby>いどんぐりより <ruby>何個<rt>なんこ</rt></ruby> <ruby>多<rt>おお</rt></ruby>いですか。`,
@@ -98,7 +119,7 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
         formula: '32 - 19 = 13',
         answer: '13枚',
         explanation: '32から19をひくひき算（くり下がり1回）です。32 - 19 = 13枚。',
-        parent_hint: 'オパール獲得おめでとう！数字が変わっても同じ考え方（差を求めるひき算）で解けるか確認してあげましょう。',
+        parent_hint: '数字が変わっても同じ考え方（差を求めるひき算）で解けるか確認してあげましょう。',
       },
       {
         problem_text: `<ruby>白<rt>しろ</rt></ruby>い おはじきが 45<ruby>個<rt>こ</rt></ruby>、<ruby>黒<rt>くろ</rt></ruby>い おはじきが 28<ruby>個<rt>こ</rt></ruby> あります。<br/><ruby>白<rt>しろ</rt></ruby>い おはじきは、<ruby>黒<rt>くろ</rt></ruby>い おはじきより <ruby>何個<rt>なんこ</rt></ruby> <ruby>多<rt>おお</rt></ruby>いですか。`,
@@ -106,7 +127,7 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
         formula: '45 - 28 = 17',
         answer: '17個',
         explanation: '45から28をひくひき算です。45 - 28 = 17個。',
-        parent_hint: 'いよいよダイヤへの挑戦！「ノートに筆算か線分図を書いてみよう」と声をかけて、落ち着いて計算を見守ってあげてください。',
+        parent_hint: '「筆算か線分図を書いてみよう」と声をかけて、落ち着いて計算を見守ってあげてください。',
       },
     ],
     needs_regeneration: false,
@@ -127,8 +148,8 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
     next_review_date: new Date().toISOString().split('T')[0],
     status: 'stage3',
     category: 'たし算の逆算（はじめの数を求める）',
-    monster_name: 'ふしぎなクッキー',
-    monster_icon: '🍪',
+    monster_name: 'たし算の逆算',
+    monster_icon: '📐',
     variants: [
       {
         problem_text: `かごの <ruby>中<rt>なか</rt></ruby>に クッキーが <ruby>何枚<rt>なんまい</rt></ruby>か ありました。<br/>あとから 15<ruby>枚<rt>まい</rt></ruby> やいたら、ぜんぶで 32<ruby>枚<rt>まい</rt></ruby>に なりました。<br/>はじめに クッキーは <ruby>何枚<rt>なんまい</rt></ruby> ありましたか。`,
@@ -144,7 +165,7 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
         formula: '43 - 18 = 25',
         answer: '25こ',
         explanation: 'ぜんぶの43こから、あとから入れた18こをひきます。43 - 18 = 25こ。',
-        parent_hint: 'オパール獲得！「あとから入れた分を戻すと、最初のが残るね」と逆算のイメージを確認してあげてください。',
+        parent_hint: '「あとから入れた分を戻すと、最初のが残るね」と逆算のイメージを確認してあげてください。',
       },
       {
         problem_text: `ふくろに キャンディーが <ruby>何こ<rt>なんこ</rt></ruby>か ありました。<br/>あとから 24<ruby>こ<rt>こ</rt></ruby> いれたら、ぜんぶで 51<ruby>こ<rt>こ</rt></ruby>に なりました。<br/>はじめに キャンディーは <ruby>何こ<rt>なんこ</rt></ruby> ありましたか。`,
@@ -152,7 +173,7 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
         formula: '51 - 24 = 27',
         answer: '27こ',
         explanation: '51 - 24 = 27こです。',
-        parent_hint: 'ダイヤ挑戦！線分図を描いて「ぜんぶで51、ふえたのが24、はじめのは？」と図から立式させましょう。',
+        parent_hint: '線分図を描いて「ぜんぶで51、ふえたのが24、はじめのは？」と図から立式させましょう。',
       },
     ],
     needs_regeneration: false,
@@ -201,7 +222,7 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
         formula: '5dL + 4dL = 9dL ➡ 1L 9dL',
         answer: '1L 9dL',
         explanation: '5dL + 4dL = 9dL。Lは1Lのままなので 1L 9dL です。',
-        parent_hint: 'オパール獲得！dLどうしを足す基本が身についているか確認してあげてください。',
+        parent_hint: 'dLどうしを足す基本が身についているか確認してあげてください。',
       },
       {
         problem_text: `おなべに スープが 2L 3dL はいっています。<br/>そこに 5dL の スープを くわえました。<br/>スープは ぜんぶで <ruby>何<rt>なん</rt></ruby>L <ruby>何<rt>なん</rt></ruby>dL に なりましたか。`,
@@ -209,7 +230,7 @@ export const INITIAL_MOCK_QUESTIONS: QuestionItem[] = [
         formula: '3dL + 5dL = 8dL ➡ 2L 8dL',
         answer: '2L 8dL',
         explanation: '3dL + 5dL = 8dL ➡ 2L 8dL。',
-        parent_hint: 'ダイヤ挑戦！「単位をしっかり見て計算しようね」と声をかけてあげてください。',
+        parent_hint: '「単位をしっかり見て計算しようね」と声をかけてあげてください。',
       },
     ],
     needs_regeneration: false,
@@ -252,6 +273,69 @@ export class StorageService {
 
   static saveSettings(settings: UserSettings): void {
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+  }
+
+  static getPrintPreferences(): PrintPreferences {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_PRINT_PREFS);
+      if (raw) {
+        return { ...DEFAULT_PRINT_PREFERENCES, ...JSON.parse(raw) };
+      }
+    } catch (e) {
+      console.warn('Failed to read print prefs from localStorage', e);
+    }
+    return DEFAULT_PRINT_PREFERENCES;
+  }
+
+  static savePrintPreferences(prefs: PrintPreferences): void {
+    localStorage.setItem(STORAGE_KEY_PRINT_PREFS, JSON.stringify(prefs));
+  }
+
+  static getPrintSession(): PrintSessionState {
+    const today = getLocalDateKey();
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_PRINT_SESSION);
+      if (raw) {
+        const parsed: PrintSessionState = JSON.parse(raw);
+        const isSameDay = parsed.printedDate === today;
+        return {
+          selectedIds: Array.isArray(parsed.selectedIds) ? parsed.selectedIds : [],
+          lastPrintedIds: Array.isArray(parsed.lastPrintedIds) ? parsed.lastPrintedIds : [],
+          printedTodayIds: isSameDay && Array.isArray(parsed.printedTodayIds) ? parsed.printedTodayIds : [],
+          printedDate: today,
+          lastPrintedAt: parsed.lastPrintedAt,
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to read print session from localStorage', e);
+    }
+    return {
+      selectedIds: [],
+      lastPrintedIds: [],
+      printedTodayIds: [],
+      printedDate: today,
+    };
+  }
+
+  static savePrintSession(session: PrintSessionState): void {
+    localStorage.setItem(STORAGE_KEY_PRINT_SESSION, JSON.stringify(session));
+  }
+
+  static recordPrintedBatch(printedIds: string[]): PrintSessionState {
+    const today = getLocalDateKey();
+    const current = this.getPrintSession();
+    const prevTodayIds = current.printedDate === today ? current.printedTodayIds : [];
+    const mergedTodayIds = Array.from(new Set([...prevTodayIds, ...printedIds]));
+    const updated: PrintSessionState = {
+      ...current,
+      selectedIds: current.selectedIds,
+      lastPrintedIds: printedIds,
+      printedTodayIds: mergedTodayIds,
+      printedDate: today,
+      lastPrintedAt: new Date().toISOString(),
+    };
+    this.savePrintSession(updated);
+    return updated;
   }
 
   static getLocalQuestions(): QuestionItem[] {
@@ -503,44 +587,35 @@ export class StorageService {
   // ステージ3（2週後） ➜ 正解で ダイヤモンド獲得 ＆ 殿堂入り（mastered）！
   static handleAnswerResult(question: QuestionItem, result: 'correct' | 'wrong'): QuestionItem {
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = getLocalDateKey(now);
     const currentStatus = normalizeStatus(question.status);
     let nextStatus: QuestionStatus = currentStatus;
     let nextReviewDate = todayStr;
 
     if (result === 'correct') {
       if (currentStatus === 'stage1' || currentStatus === 'inbox') {
-        // ステージ1 クリア ➜ オパール獲得！ 次は水・土
         nextStatus = 'stage2';
-        const nextDate = getNextWedOrSat(now);
-        nextReviewDate = nextDate.toISOString().split('T')[0];
+        nextReviewDate = getLocalDateKey(getNextWedOrSat(now));
       } else if (currentStatus === 'stage2') {
-        // ステージ2 クリア ➜ サファイア獲得！ 次は2週間後（14日後）
         nextStatus = 'stage3';
         const twoWeeksLater = new Date(now.getTime() + 14 * 24 * 3600 * 1000);
-        nextReviewDate = twoWeeksLater.toISOString().split('T')[0];
+        nextReviewDate = getLocalDateKey(twoWeeksLater);
       } else if (currentStatus === 'stage3') {
-        // ステージ3 クリア ➜ ダイヤモンド獲得！ 殿堂入り
         nextStatus = 'mastered';
         nextReviewDate = '';
       }
     } else {
-      // 間違えた（×）場合
       if (currentStatus === 'stage2') {
-        // ステージ2で苦戦 ➜ ステージ1（毎日）に戻して翌日再挑戦
         nextStatus = 'stage1';
         const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
-        nextReviewDate = tomorrow.toISOString().split('T')[0];
+        nextReviewDate = getLocalDateKey(tomorrow);
       } else if (currentStatus === 'stage3') {
-        // ステージ3で苦戦 ➜ ステージ2（水・土）に戻して直近の水・土に再挑戦
         nextStatus = 'stage2';
-        const nextDate = getNextWedOrSat(now);
-        nextReviewDate = nextDate.toISOString().split('T')[0];
+        nextReviewDate = getLocalDateKey(getNextWedOrSat(now));
       } else {
-        // ステージ1で苦戦 ➜ ステージ1維持、翌日再挑戦
         nextStatus = 'stage1';
         const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
-        nextReviewDate = tomorrow.toISOString().split('T')[0];
+        nextReviewDate = getLocalDateKey(tomorrow);
       }
     }
 

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, MessageSquarePlus, Sparkles, Check } from 'lucide-react';
 import { QuestionItem } from '../types';
-import { getCurrentVariant } from '../utils/gemHelper';
+import { getCurrentVariant, getQuestionTitle } from '../utils/gemHelper';
 
 interface FeedbackModalProps {
   question: QuestionItem | null;
@@ -10,12 +10,12 @@ interface FeedbackModalProps {
 }
 
 const QUICK_TAGS = [
+  '余計な物語・設定を入れない',
   '線分図を描かせる意図',
   '問題のタイプが違う',
   '足し算ではなく逆算（引き算）',
   '答えが割り切れない・綺麗じゃない',
   '小2には言葉が難しすぎる',
-  '図や具体物（りんご等）をイメージさせたい',
   '数字だけ変えた完全類題にして',
 ];
 
@@ -23,6 +23,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ question, onClose,
   const [comment, setComment] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setComment('');
+    setSelectedTags([]);
+  }, [question?.id]);
 
   if (!question) return null;
 
@@ -46,29 +51,33 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ question, onClose,
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-[55] bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 no-print">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* ヘッダー */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-amber-50">
-          <div className="flex items-center space-x-2">
-            <div className="p-1.5 bg-amber-100 text-amber-700 rounded-lg">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-amber-50 shrink-0">
+          <div className="flex items-center space-x-2 min-w-0">
+            <div className="p-1.5 bg-amber-100 text-amber-700 rounded-lg shrink-0">
               <MessageSquarePlus className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="font-bold text-slate-800">親のツッコミ ＆ 類題再生成</h3>
-              <p className="text-xs text-amber-700">AIに教育的意図・違和感をフィードバック</p>
+            <div className="min-w-0">
+              <h3 className="font-bold text-slate-800 text-sm truncate">
+                AIへツッコミ ＆ 類題再生成
+              </h3>
+              <p className="text-xs text-amber-700 truncate">
+                {getQuestionTitle(question)}
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* フォーム */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1 pb-safe">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
               現在の問題

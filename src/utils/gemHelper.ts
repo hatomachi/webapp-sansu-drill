@@ -10,45 +10,61 @@ export interface GemInfo {
   description: string;
 }
 
+export function getLocalTodayStr(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function getGemInfo(rawStatus: QuestionStatus): GemInfo {
   const status = normalizeStatus(rawStatus);
   switch (status) {
+    case 'inbox':
+      return {
+        name: '解析中',
+        icon: '⏳',
+        colorName: 'スレート',
+        badgeClass: 'bg-amber-50 text-amber-800 border border-amber-200 font-semibold',
+        cardBorder: 'border-amber-200 bg-amber-50/30',
+        description: 'AIが類題を作成中',
+      };
     case 'stage2':
       return {
-        name: 'オパール',
-        icon: '⚪️',
-        colorName: 'オパールホワイト',
-        badgeClass: 'badge-opal font-bold',
-        cardBorder: 'border-slate-300 bg-slate-50/50',
-        description: '1回クリア（オパール獲得）',
+        name: '2回目',
+        icon: '2',
+        colorName: 'スカイ',
+        badgeClass: 'bg-sky-50 text-sky-800 border border-sky-200 font-semibold',
+        cardBorder: 'border-sky-200 bg-sky-50/40',
+        description: '1回クリア（復習中）',
       };
     case 'stage3':
       return {
-        name: 'サファイア',
-        icon: '🔷',
-        colorName: 'サファイアブルー',
-        badgeClass: 'badge-sapphire font-bold',
-        cardBorder: 'border-blue-300 bg-blue-50/50',
-        description: '2回クリア（サファイア獲得）',
+        name: '3回目',
+        icon: '3',
+        colorName: 'インディゴ',
+        badgeClass: 'bg-indigo-50 text-indigo-800 border border-indigo-200 font-semibold',
+        cardBorder: 'border-indigo-200 bg-indigo-50/40',
+        description: '2回クリア（仕上げ）',
       };
     case 'mastered':
       return {
-        name: 'ダイヤモンド',
-        icon: '💎',
-        colorName: 'ダイヤ',
-        badgeClass: 'badge-diamond font-black',
-        cardBorder: 'border-amber-400 bg-amber-50/60 ring-2 ring-amber-200',
-        description: '3回クリア（ダイヤモンド殿堂入り！）',
+        name: '完了',
+        icon: '✓',
+        colorName: 'エメラルド',
+        badgeClass: 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold',
+        cardBorder: 'border-emerald-200 bg-emerald-50/40',
+        description: '3回クリア（定着完了）',
       };
     case 'stage1':
     default:
       return {
-        name: 'ステップ1',
-        icon: '✨',
-        colorName: 'チャレンジャー',
-        badgeClass: 'bg-emerald-100 text-emerald-800 border border-emerald-300',
-        cardBorder: 'border-emerald-200 bg-emerald-50/30',
-        description: 'はじめての挑戦',
+        name: '1回目',
+        icon: '1',
+        colorName: 'アンバー',
+        badgeClass: 'bg-amber-50 text-amber-800 border border-amber-200 font-semibold',
+        cardBorder: 'border-amber-200 bg-amber-50/30',
+        description: '初回・再挑戦',
       };
   }
 }
@@ -63,20 +79,67 @@ export function getStageLabel(rawStatus: QuestionStatus, config: StageConfig): s
     case 'stage3':
       return config.stage3Label || '2週後';
     case 'mastered':
-      return '殿堂入り';
+      return '定着完了';
     case 'inbox':
-      return 'AI解析中';
+      return 'AI生成中';
     default:
-      return 'もんだい';
+      return '復習';
   }
 }
 
+export function getStageBadgeText(rawStatus: QuestionStatus, config: StageConfig): string {
+  const status = normalizeStatus(rawStatus);
+  const info = getGemInfo(status);
+  if (status === 'mastered' || status === 'inbox') {
+    return info.name;
+  }
+  return `${info.name}（${getStageLabel(status, config)}）`;
+}
+
+export function getQuestionTitle(question: QuestionItem): string {
+  if (normalizeStatus(question.status) === 'inbox') {
+    return question.memo ? `解析中: ${question.memo}` : '撮影済み（AI解析中）';
+  }
+  if (question.category && question.category !== '未解析（AI解析中）') {
+    return question.category;
+  }
+  return question.monster_name || '算数の問題';
+}
+
+export function getSolutionDisplay(variant: ProblemVariant): string {
+  const ans = (variant.answer || '').trim();
+  const formula = (variant.formula || '').trim();
+  if (ans && formula && formula !== ans) {
+    return `${ans}（${formula}）`;
+  }
+  return ans || formula || '（解答未登録）';
+}
+
+export function isDueToday(question: QuestionItem, todayStr: string = getLocalTodayStr()): boolean {
+  const status = normalizeStatus(question.status);
+  if (status === 'mastered' || status === 'inbox') return false;
+  if (status === 'stage1') return true;
+  if (!question.next_review_date) return true;
+  return question.next_review_date <= todayStr;
+}
+
+export function getRecommendedPrintIds(questions: QuestionItem[], maxCount = 3): string[] {
+  const todayStr = getLocalTodayStr();
+  const printable = questions.filter((q) => {
+    const s = normalizeStatus(q.status);
+    return s !== 'mastered' && s !== 'inbox';
+  });
+
+  const due = printable.filter((q) => isDueToday(q, todayStr));
+  const upcoming = printable.filter((q) => !isDueToday(q, todayStr));
+  return [...due, ...upcoming].slice(0, maxCount).map((q) => q.id);
+}
+
 /**
- * 現在のステージ（オパール/サファイア/ダイヤ）に応じた出題バリアントを取得
+ * 現在のステージに応じた出題バリアントを取得
  * - stage1 (毎日) ➜ 問1 (variants[0])
  * - stage2 (水・土) ➜ 問2 (variants[1])
  * - stage3 (2週後) ➜ 問3 (variants[2])
- * - 既存の1問データの場合はフォールバック
  */
 export function getCurrentVariant(question: QuestionItem): ProblemVariant {
   const status = normalizeStatus(question.status);
@@ -92,7 +155,6 @@ export function getCurrentVariant(question: QuestionItem): ProblemVariant {
     return variants[0];
   }
 
-  // 万が一 variants が空の場合のフォールバック（トップレベルから救済）
   return {
     problem_text: question.problem_text || 'もんだいを よみこみちゅう...',
     problem_plain_text: question.problem_plain_text || 'もんだいを よみこみちゅう...',

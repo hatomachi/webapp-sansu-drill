@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png'],
       manifest: {
-        name: 'Sansu Drill - 算数モンスター討伐クエスト',
+        name: 'Sansu Drill - 毎日の算数プリント',
         short_name: 'SansuDrill',
-        description: '娘（小2）の算数学習用・間違えた文章題の類題自動生成＆ストックPWA',
+        description: '間違えた算数の問題を撮影して毎日A4プリント作成＆復習管理ができる親向けPWA',
         theme_color: '#3B82F6',
         background_color: '#F8FAFC',
         display: 'standalone',

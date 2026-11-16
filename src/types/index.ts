@@ -80,4 +80,18 @@ export interface UserSettings {
   geminiApiKey?: string;
   isDemoMode: boolean;
   stageConfig: StageConfig;
+  printHeaderTitle?: string;
+}
+
+export interface PrintPreferences {
+  showGridDots: boolean;
+  includeAnswerSheet: boolean;
+}
+
+export interface PrintSessionState {
+  selectedIds: string[];
+  lastPrintedIds: string[];
+  printedTodayIds: string[];
+  printedDate: string; // YYYY-MM-DD
+  lastPrintedAt?: string;
 }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Save, Key, RefreshCw, ShieldCheck, Trash2, Calendar, Gem } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Save, Key, RefreshCw, ShieldCheck, Trash2, Calendar, Sliders } from 'lucide-react';
 import { UserSettings, StageConfig } from '../types';
 import { StorageService, INITIAL_MOCK_QUESTIONS, DEFAULT_STAGE_CONFIG } from '../services/storage';
 
@@ -17,6 +17,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [settings, setSettings] = useState<UserSettings>(() => StorageService.getSettings());
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      setSettings(StorageService.getSettings());
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSave = (e: React.FormEvent) => {
@@ -31,7 +37,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleDeleteSamples = async () => {
-    if (window.confirm('初期サンプル問題（どんぐり・クッキー・水そう）をすべて削除しますか？\n（自分で撮影した問題のみが残ります）')) {
+    if (window.confirm('初期サンプル問題（q_demo_）をすべて削除しますか？\n（撮影した問題のみが残ります）')) {
       await StorageService.deleteSampleQuestions();
       onSettingsSaved();
       alert('サンプル問題を削除しました');
@@ -67,16 +73,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 no-print">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
           <div className="flex items-center space-x-2">
             <div className="p-1.5 bg-slate-800 text-white rounded-lg">
-              <Gem className="w-5 h-5 text-amber-300" />
+              <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800">アプリ設定 & 復習スケジュール</h3>
-              <p className="text-xs text-slate-500">段階ラベル・GitHub同期・データ管理</p>
+              <h3 className="font-bold text-slate-800 text-sm">アプリ設定 & 復習スケジュール</h3>
+              <p className="text-xs text-slate-500">プリント見出し・段階ラベル・GitHub同期</p>
             </div>
           </div>
           <button
@@ -87,56 +93,70 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="p-5 space-y-4 overflow-y-auto flex-1">
+        <form onSubmit={handleSave} className="p-5 space-y-4 overflow-y-auto flex-1 pb-safe">
+          {/* プリント用紙タイトル */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              プリント用紙の見出し（任意）
+            </label>
+            <input
+              type="text"
+              value={settings.printHeaderTitle || ''}
+              onChange={(e) => setSettings({ ...settings, printHeaderTitle: e.target.value })}
+              placeholder="さんすう ふくしゅうプリント"
+              className="w-full text-xs p-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           {/* 3段階復習のラベル自由入力 */}
-          <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-2xl space-y-3">
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
             <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-amber-700" />
-              <span className="text-xs font-bold text-amber-950">
+              <Calendar className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-bold text-slate-800">
                 3段階の復習ラベル（自由入力）
               </span>
             </div>
-            <p className="text-[11px] text-amber-800 leading-relaxed">
-              娘さんの学習リズムに合わせて、各ステップの呼び名（毎日、水・土、2週後など）を自由に変更できます。
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              学習リズムに合わせて、各ステップの呼び名（毎日、水・土、2週後など）を変更できます。
             </p>
 
             <div className="space-y-2">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
-                  ① ステップ1（初回・撮影直後）
+                  1回目（初回・再挑戦）
                 </label>
                 <input
                   type="text"
                   value={stageConfig.stage1Label}
                   onChange={(e) => handleStageConfigChange('stage1Label', e.target.value)}
                   placeholder="毎日"
-                  className="w-full text-xs p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  className="w-full text-xs p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
-                  ② ステップ2（⚪️ オパール獲得後）
+                  2回目（1回クリア後）
                 </label>
                 <input
                   type="text"
                   value={stageConfig.stage2Label}
                   onChange={(e) => handleStageConfigChange('stage2Label', e.target.value)}
                   placeholder="水・土"
-                  className="w-full text-xs p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  className="w-full text-xs p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
-                  ③ ステップ3（🔷 サファイア獲得後）
+                  3回目（2回クリア後）
                 </label>
                 <input
                   type="text"
                   value={stageConfig.stage3Label}
                   onChange={(e) => handleStageConfigChange('stage3Label', e.target.value)}
                   placeholder="2週後"
-                  className="w-full text-xs p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  className="w-full text-xs p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
             </div>

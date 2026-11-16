@@ -78,8 +78,8 @@ export const CaptureModal: React.FC<CaptureModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 no-print">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 pb-safe">
         {/* ヘッダー */}
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-blue-50">
           <div className="flex items-center space-x-2">
@@ -87,8 +87,8 @@ export const CaptureModal: React.FC<CaptureModalProps> = ({
               <Camera className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800">間違えた問題を撮影（5秒）</h3>
-              <p className="text-xs text-blue-700">類題生成・解説・スケジュールはAIが全自動化</p>
+              <h3 className="font-bold text-slate-800 text-sm">間違えた問題を撮影（5秒）</h3>
+              <p className="text-xs text-blue-700">Mac側のAIが類題3問を自動作成します</p>
             </div>
           </div>
           <button
@@ -128,8 +128,8 @@ export const CaptureModal: React.FC<CaptureModalProps> = ({
                 <div className="p-3 bg-blue-600 text-white rounded-full shadow-md group-hover:scale-110 transition-transform">
                   <Camera className="w-6 h-6" />
                 </div>
-                <span className="mt-3 text-xs font-bold text-blue-900">カメラで今すぐ撮影</span>
-                <span className="text-[10px] text-blue-600 mt-0.5">iPad / スマホのカメラ起動</span>
+                <span className="mt-3 text-xs font-bold text-blue-900">カメラで撮影</span>
+                <span className="text-[11px] text-blue-600 mt-0.5">今すぐ撮る</span>
               </button>
 
               <button
@@ -140,8 +140,8 @@ export const CaptureModal: React.FC<CaptureModalProps> = ({
                 <div className="p-3 bg-slate-700 text-white rounded-full shadow-md group-hover:scale-110 transition-transform">
                   <ImageIcon className="w-6 h-6" />
                 </div>
-                <span className="mt-3 text-xs font-bold text-slate-800">ライブラリから選択</span>
-                <span className="text-[10px] text-slate-500 mt-0.5">撮影済みの写真を選ぶ</span>
+                <span className="mt-3 text-xs font-bold text-slate-800">写真から選ぶ</span>
+                <span className="text-[11px] text-slate-500 mt-0.5">アルバムを選択</span>
               </button>
             </div>
           ) : (

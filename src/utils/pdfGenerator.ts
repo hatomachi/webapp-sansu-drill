@@ -152,7 +152,7 @@ export async function sharePdfFile(
   try {
     await navigator.share({
       files: [file],
-      title: 'さんすう チャレンジプリント',
+      title: 'さんすう ふくしゅうプリント',
     });
     return 'shared';
   } catch (err) {

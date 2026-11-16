@@ -73,6 +73,15 @@
   background-size: 16px 16px;
 }
 
+/* iPhone PWA safe-area 補助 */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* プリント紙面内の問題文・筆算の余白微調整 */
 .print-problem-body .my-4 {
   margin-top: 0.5rem;

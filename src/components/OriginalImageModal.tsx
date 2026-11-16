@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { QuestionItem } from '../types';
 import { StorageService } from '../services/storage';
+import { getQuestionTitle } from '../utils/gemHelper';
 
 interface OriginalImageModalProps {
   question: QuestionItem | null;
@@ -51,16 +52,16 @@ export const OriginalImageModal: React.FC<OriginalImageModalProps> = ({ question
   if (!question) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <div>
-            <h3 className="font-bold text-slate-800 flex items-center space-x-2">
-              <span>📷 撮影した元の問題</span>
-              <span className="text-xs font-normal text-slate-500">({question.id})</span>
+          <div className="min-w-0 pr-2">
+            <h3 className="font-bold text-slate-800 text-sm truncate">
+              撮影した元の問題
             </h3>
+            <p className="text-xs text-slate-500 truncate">{getQuestionTitle(question)}</p>
             {question.memo && (
-              <p className="text-xs text-slate-600 mt-0.5">親のメモ: {question.memo}</p>
+              <p className="text-xs text-slate-600 mt-0.5">メモ: {question.memo}</p>
             )}
           </div>
           <button
