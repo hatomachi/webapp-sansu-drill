@@ -73,6 +73,12 @@
   background-size: 16px 16px;
 }
 
+/* プリント紙面内の問題文・筆算の余白微調整 */
+.print-problem-body .my-4 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 /* 印刷（@media print）専用スタイル */
 @media print {
   @page {
@@ -106,6 +112,17 @@
     overflow: visible !important;
   }
 
+  .print-scale-wrapper {
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .print-scale-inner {
+    transform: none !important;
+    width: 100% !important;
+  }
+
   .print-page {
     page-break-after: always !important;
     break-after: page !important;
@@ -116,7 +133,7 @@
     width: 100% !important;
     max-width: 100% !important;
     min-height: 0 !important;
-    height: auto !important;
+    height: 275mm !important;
   }
 
   .print-page:last-child {

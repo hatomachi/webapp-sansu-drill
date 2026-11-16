@@ -109,7 +109,7 @@ export const App: React.FC = () => {
   const dueCount = questions.filter((q) => q.status !== 'mastered').length;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans print:block print:min-h-0 print:bg-white">
       <Header
         isParentMode={isParentMode}
         onToggleParentMode={() => setIsParentMode(!isParentMode)}
